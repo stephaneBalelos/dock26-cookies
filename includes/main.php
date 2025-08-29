@@ -33,7 +33,7 @@ class Dock26_Cookies_Main
     public static function enqueue_scripts()
     {
         // Enqueue Scripts
-        wp_enqueue_script('dock26_cookies_main', plugins_url('/assets/js/main.es.js', __FILE__), [], DOCK26_COOKIES_PLUGIN_VERSION, true);
+        wp_enqueue_script('dock26_cookies_main', plugins_url('../dist/assets/js/main.iife.js', __FILE__), [], DOCK26_COOKIES_PLUGIN_VERSION, true);
     }
 
 

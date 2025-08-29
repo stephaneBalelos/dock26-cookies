@@ -8,7 +8,7 @@ export default defineConfig({
             },
             name: 'dock26_cookies',
             fileName: (format, entryName) => `assets/js/${entryName}.${format}.js`,
-            formats: ['es'],
+            formats: ['iife'],
         },
         rollupOptions: {
             output: {
