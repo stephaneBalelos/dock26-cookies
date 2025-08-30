@@ -2,7 +2,7 @@
 /*
 Plugin Name: Dock26 Cookies
 Description: Dock26 Cookies Plugin
-Version: 0.1.2
+Version: 0.2.0
 Author: Dock26
 */
 
@@ -11,7 +11,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('DOCK26_COOKIES_PLUGIN_VERSION', '0.1.2');
+define('DOCK26_COOKIES_PLUGIN_VERSION', '0.2.0');
 
 // include necessary files
 require_once plugin_dir_path(__FILE__) . 'includes/shortcodes.php';
