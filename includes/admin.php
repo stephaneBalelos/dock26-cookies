@@ -14,6 +14,32 @@ class Dock26_Cookies_Admin
         add_action('save_post', ['Dock26_Cookies_Admin', 'dock26_cookies_save_consent_category_meta']);
 
         add_action('admin_menu', ['Dock26_Cookies_Admin', 'dock26_cookies_register_admin_menu']);
+
+                // Add Column For Custom Fields
+        add_filter('manage_consent_category_posts_columns', function ($columns) {
+            $columns['id'] = 'ID';
+            $columns['consent_name'] = 'Name';
+            $columns['consent_enabled'] = 'Enabled';
+            $columns['consent_readonly'] = 'Read Only';
+            return $columns;
+        });
+
+        add_action('manage_consent_category_posts_custom_column', function ($column, $post_id) {
+            switch ($column) {
+                case 'id':
+                    echo esc_html($post_id);
+                    break;
+                case 'consent_name':
+                    echo esc_html(get_post_meta($post_id, '_consent_name', true));
+                    break;
+                case 'consent_enabled':
+                    echo esc_html(get_post_meta($post_id, '_consent_enabled', true));
+                    break;
+                case 'consent_readonly':
+                    echo esc_html(get_post_meta($post_id, '_consent_readonly', true));
+                    break;
+            }
+        }, 10, 2);
     }
 
     // Register Admin Menu
