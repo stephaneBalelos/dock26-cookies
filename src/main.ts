@@ -34,7 +34,7 @@ declare global {
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
 
     console.log(window.dock26Cookies);
     if (window.dock26Cookies.categories.length === 0) {
@@ -52,7 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
         sections.push({
             title: category.name,
             description: category.description,
-            linkedCategory: category.id
+            linkedCategory: (category.enabled && category.readOnly) ? undefined : category.id
         });
     });
 
@@ -60,7 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const settings = window.dock26Cookies.settings;
 
-    CookieConsent.run({
+    await CookieConsent.run({
 
         // root: 'body',
         // autoShow: true,
