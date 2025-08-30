@@ -53,6 +53,8 @@ class Dock26_Cookies_Main
             'post_type' => 'consent_category',
             'numberposts' => 99,
             'post_status' => 'publish',
+            'orderby' => 'ID',
+            'order' => 'ASC',
         ]);
 
         foreach ($cats as $key => $cat) {
