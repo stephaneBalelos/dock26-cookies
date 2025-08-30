@@ -10,8 +10,9 @@ class Dock26_Cookies_Main
     public static function install()
     {
 
-        add_action('init', ['Dock26_Cookies_Main', 'register_shortcode']);
+        add_action('init', ['Dock26_Cookies_Main', 'init']);
         add_action('wp_enqueue_scripts', ['Dock26_Cookies_Main', 'enqueue_assets']);
+        add_action('admin_init', ['Dock26_Cookies_Admin', 'dock26_cookies_register_settings']);
 
         // Update the plugin version by changing the version number
         $new_version = DOCK26_COOKIES_PLUGIN_VERSION;
@@ -28,6 +29,7 @@ class Dock26_Cookies_Main
             // Update the plugin version in the database
             update_option('dock26_cookies_plugin_version', $new_version);
         }
+
     }
 
     public static function enqueue_assets()
@@ -38,6 +40,12 @@ class Dock26_Cookies_Main
         // Enqueue Scripts
         wp_enqueue_script_module('dock26_cookieconsent', 'https://cdn.jsdelivr.net/gh/orestbida/cookieconsent@3.1.0/dist/cookieconsent.umd.js', [], DOCK26_COOKIES_PLUGIN_VERSION);
         wp_enqueue_script_module('dock26_cookies_main', plugins_url('../dist/assets/js/main.iife.js', __FILE__), ['dock26_cookieconsent'], DOCK26_COOKIES_PLUGIN_VERSION);
+    }
+
+    public static function init() {
+        new Dock26_Cookies_Admin();
+
+        self::register_shortcode();
     }
 
     public static function register_shortcode()

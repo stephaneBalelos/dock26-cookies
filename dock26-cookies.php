@@ -15,7 +15,7 @@ define('DOCK26_COOKIES_PLUGIN_VERSION', '0.0.1');
 
 // include necessary files
 require_once plugin_dir_path(__FILE__) . 'includes/shortcodes.php';
-
+require_once plugin_dir_path(__FILE__) . 'includes/admin.php';
 // Load main plugin class
 require_once plugin_dir_path(__FILE__) . 'includes/main.php';
 
