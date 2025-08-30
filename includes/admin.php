@@ -54,7 +54,8 @@ class Dock26_Cookies_Admin
     {
         $name        = get_post_meta($post->ID, '_consent_name', true);
         $description = get_post_meta($post->ID, '_consent_description', true);
-        $key         = get_post_meta($post->ID, '_consent_key', true);
+        $isReadOnly  = get_post_meta($post->ID, '_consent_readonly', true);
+        $isEnabled   = get_post_meta($post->ID, '_consent_enabled', true);
 
         echo '<p>';
         echo '<label><strong>Name:</strong></label><br>';
@@ -67,8 +68,13 @@ class Dock26_Cookies_Admin
         echo '</p>';
 
         echo '<p>';
-        echo '<label><strong>Unique Key:</strong></label><br>';
-        echo '<input type="text" name="consent_key" value="' . esc_attr($key) . '" style="width:100%;" />';
+        echo '<label><strong>Enabled:</strong></label><br>';
+        echo '<input type="checkbox" name="consent_enabled" value="1" ' . checked($isEnabled, true, false) . ' />';
+        echo '</p>';
+
+        echo '<p>';
+        echo '<label><strong>Read Only:</strong></label><br>';
+        echo '<input type="checkbox" name="consent_readonly" value="1" ' . checked($isReadOnly, true, false) . ' />';
         echo '</p>';
     }
 
@@ -80,8 +86,15 @@ class Dock26_Cookies_Admin
         if (array_key_exists('consent_description', $_POST)) {
             update_post_meta($post_id, '_consent_description', sanitize_textarea_field($_POST['consent_description']));
         }
-        if (array_key_exists('consent_key', $_POST)) {
-            update_post_meta($post_id, '_consent_key', sanitize_key($_POST['consent_key']));
+        if (array_key_exists('consent_enabled', $_POST)) {
+            update_post_meta($post_id, '_consent_enabled', $_POST['consent_enabled'] === '1' ? '1' : '0');
+        } else {
+            update_post_meta($post_id, '_consent_enabled', '0');
+        }
+        if (array_key_exists('consent_readonly', $_POST)) {
+            update_post_meta($post_id, '_consent_readonly', $_POST['consent_readonly'] === '1' ? '1' : '0');
+        } else {
+            update_post_meta($post_id, '_consent_readonly', '0');
         }
     }
 
@@ -120,6 +133,20 @@ class Dock26_Cookies_Admin
             'dock26_cookies_options_group'
         );
 
+        add_settings_section(
+            'dock26_cookies_consent_modal_section',
+            'Consent Modal Settings',
+            null,
+            'dock26_cookies_options_group'
+        );
+
+        add_settings_section(
+            'dock26_cookies_preferences_modal_section',
+            'Preferences Modal Settings',
+            null,
+            'dock26_cookies_options_group'
+        );
+
         add_settings_field(
             'dock26_cookies_enable_script_blocking',
             'Enable Script Blocking',
@@ -136,11 +163,56 @@ class Dock26_Cookies_Admin
             'dock26_cookies_general_section'
         );
 
+        add_settings_field(
+            'dock26_cookies_imprint_link',
+            'Impressum Link',
+            [__CLASS__, 'dock26_cookies_render_imprint_link_field'],
+            'dock26_cookies_options_group',
+            'dock26_cookies_general_section'
+        );
+
+        add_settings_field(
+            'dock26_cookies_privacy_policy_link',
+            'Datenschutzerklärung Link',
+            [__CLASS__, 'dock26_cookies_render_privacy_policy_link_field'],
+            'dock26_cookies_options_group',
+            'dock26_cookies_general_section'
+        );
+
+        add_settings_field(
+            'dock26_cookies_consent_modal_title',
+            'Consent Modal Title',
+            [__CLASS__, 'dock26_cookies_render_consent_modal_title_field'],
+            'dock26_cookies_options_group',
+            'dock26_cookies_consent_modal_section'
+        );
+
+        add_settings_field(
+            'dock26_cookies_consent_modal_description',
+            'Consent Modal Description',
+            [__CLASS__, 'dock26_cookies_render_consent_modal_description_field'],
+            'dock26_cookies_options_group',
+            'dock26_cookies_consent_modal_section'
+        );
+
+        add_settings_field(
+            'dock26_cookies_preferences_modal_title',
+            'Preferences Modal Title',
+            [__CLASS__, 'dock26_cookies_render_preferences_modal_title_field'],
+            'dock26_cookies_options_group',
+            'dock26_cookies_preferences_modal_section'
+        );
+
         // save default options if not set
         if (!get_option('dock26_cookies_options')) {
             update_option('dock26_cookies_options', [
                 'enable_script_blocking' => true,
                 'custom_message' => 'My Message',
+                'imprint_link' => '',
+                'privacy_policy_link' => '',
+                'consent_modal_title' => 'Cookie-Zustimmung',
+                'consent_modal_description' => 'Wir verwenden Cookies, um Ihnen die bestmögliche Erfahrung auf unserer Website zu bieten.',
+                'preferences_modal_title' => 'Cookies-Einstellungen',
             ]);
         }
     }
@@ -148,23 +220,68 @@ class Dock26_Cookies_Admin
     public static function dock26_cookies_render_enable_script_blocking_field()
     {
         $options = get_option('dock26_cookies_options');
-        ?>
+?>
         <input type="checkbox" name="dock26_cookies_options[enable_script_blocking]" value="1" <?php checked($options['enable_script_blocking'] ?? true); ?> />
-        <?php
+    <?php
     }
 
     public static function dock26_cookies_render_custom_message_field()
     {
         $options = get_option('dock26_cookies_options');
-        ?>
+    ?>
         <textarea name="dock26_cookies_options[custom_message]" rows="5" style="width:100%;"><?php echo esc_textarea($options['custom_message'] ?? ''); ?></textarea>
-        <?php
+    <?php
+    }
+
+    public static function dock26_cookies_render_imprint_link_field()
+    {
+        $options = get_option('dock26_cookies_options');
+    ?>
+        <input type="text" name="dock26_cookies_options[imprint_link]" value="<?php echo esc_url($options['imprint_link'] ?? ''); ?>" style="width:100%;" />
+    <?php
+    }
+
+    public static function dock26_cookies_render_privacy_policy_link_field()
+    {
+        $options = get_option('dock26_cookies_options');
+    ?>
+        <input type="text" name="dock26_cookies_options[privacy_policy_link]" value="<?php echo esc_url($options['privacy_policy_link'] ?? ''); ?>" style="width:100%;" />
+    <?php
+    }
+
+    public static function dock26_cookies_render_consent_modal_title_field()
+    {
+        $options = get_option('dock26_cookies_options');
+    ?>
+        <input type="text" name="dock26_cookies_options[consent_modal_title]" value="<?php echo esc_attr($options['consent_modal_title'] ?? ''); ?>" style="width:100%;" />
+    <?php
+    }
+
+    public static function dock26_cookies_render_consent_modal_description_field()
+    {
+        $options = get_option('dock26_cookies_options');
+    ?>
+        <textarea name="dock26_cookies_options[consent_modal_description]" rows="5" style="width:100%;"><?php echo esc_textarea($options['consent_modal_description'] ?? ''); ?></textarea>
+<?php
+    }
+
+    public static function dock26_cookies_render_preferences_modal_title_field()
+    {
+        $options = get_option('dock26_cookies_options');
+    ?>
+        <input type="text" name="dock26_cookies_options[preferences_modal_title]" value="<?php echo esc_attr($options['preferences_modal_title'] ?? ''); ?>" style="width:100%;" />
+    <?php
     }
 
     public static function dock26_cookies_sanitize_options($options)
     {
         $options['enable_script_blocking'] = isset($options['enable_script_blocking']) ? true : false;
         $options['custom_message'] = sanitize_textarea_field($options['custom_message']);
+        $options['imprint_link'] = esc_url_raw($options['imprint_link'] ?? '');
+        $options['privacy_policy_link'] = esc_url_raw($options['privacy_policy_link'] ?? '');
+        $options['consent_modal_title'] = sanitize_text_field($options['consent_modal_title'] ?? '');
+        $options['consent_modal_description'] = sanitize_textarea_field($options['consent_modal_description'] ?? '');
+        $options['preferences_modal_title'] = sanitize_text_field($options['preferences_modal_title'] ?? '');
         return $options;
     }
 }

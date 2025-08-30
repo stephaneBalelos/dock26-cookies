@@ -38,8 +38,35 @@ class Dock26_Cookies_Main
         wp_enqueue_style('dock26_cookieconsent', 'https://cdn.jsdelivr.net/gh/orestbida/cookieconsent@3.1.0/dist/cookieconsent.css', [], DOCK26_COOKIES_PLUGIN_VERSION);
         // wp_enqueue_style('dock26_cookies_main', plugins_url('../dist/assets/css/main.css', __FILE__), ['dock26_cookieconsent'], DOCK26_COOKIES_PLUGIN_VERSION);
         // Enqueue Scripts
-        wp_enqueue_script_module('dock26_cookieconsent', 'https://cdn.jsdelivr.net/gh/orestbida/cookieconsent@3.1.0/dist/cookieconsent.umd.js', [], DOCK26_COOKIES_PLUGIN_VERSION);
-        wp_enqueue_script_module('dock26_cookies_main', plugins_url('../dist/assets/js/main.iife.js', __FILE__), ['dock26_cookieconsent'], DOCK26_COOKIES_PLUGIN_VERSION);
+        wp_enqueue_script('dock26_cookieconsent', 'https://cdn.jsdelivr.net/gh/orestbida/cookieconsent@3.1.0/dist/cookieconsent.umd.js', [], DOCK26_COOKIES_PLUGIN_VERSION);
+        wp_enqueue_script('dock26_cookies_main', plugins_url('../dist/assets/js/main.iife.js', __FILE__), [], DOCK26_COOKIES_PLUGIN_VERSION);
+
+        wp_localize_script('dock26_cookies_main', 'dock26Cookies', [
+            'settings' => get_option('dock26_cookies_options'),
+            'categories' => self::get_categories(),
+        ]);
+    }
+
+    public static function get_categories() {
+        $categories = array();
+        $cats = get_posts([
+            'post_type' => 'consent_category',
+            'numberposts' => 99,
+            'post_status' => 'publish',
+        ]);
+
+        foreach ($cats as $key => $cat) {
+            $cats[$key]->meta = get_post_meta($cat->ID);
+
+            $categories[] = array(
+                'name' => isset($cats[$key]->meta['_consent_name']) ? $cats[$key]->meta['_consent_name'][0] : 'category_' . $cat->ID,
+                'description' => isset($cats[$key]->meta['_consent_description']) ? $cats[$key]->meta['_consent_description'][0] : '',
+                'enabled' => isset($cats[$key]->meta['_consent_enabled']) ? $cats[$key]->meta['_consent_enabled'][0] === '1' : false,
+                'readOnly' => isset($cats[$key]->meta['_consent_readonly']) ? $cats[$key]->meta['_consent_readonly'][0] === '1' : false,
+                'id' => $cat->ID
+            );
+        }
+        return $categories;
     }
 
     public static function init() {
