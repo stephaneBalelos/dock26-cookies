@@ -174,22 +174,6 @@ class Dock26_Cookies_Admin
         );
 
         add_settings_field(
-            'dock26_cookies_enable_script_blocking',
-            'Enable Script Blocking',
-            [__CLASS__, 'dock26_cookies_render_enable_script_blocking_field'],
-            'dock26_cookies_options_group',
-            'dock26_cookies_general_section'
-        );
-
-        add_settings_field(
-            'dock26_cookies_custom_message',
-            'Custom Consent Message',
-            [__CLASS__, 'dock26_cookies_render_custom_message_field'],
-            'dock26_cookies_options_group',
-            'dock26_cookies_general_section'
-        );
-
-        add_settings_field(
             'dock26_cookies_imprint_link',
             'Impressum Link',
             [__CLASS__, 'dock26_cookies_render_imprint_link_field'],
@@ -232,8 +216,6 @@ class Dock26_Cookies_Admin
         // save default options if not set
         if (!get_option('dock26_cookies_options')) {
             update_option('dock26_cookies_options', [
-                'enable_script_blocking' => true,
-                'custom_message' => 'My Message',
                 'imprint_link' => '',
                 'privacy_policy_link' => '',
                 'consent_modal_title' => 'Cookie-Zustimmung',
@@ -241,22 +223,6 @@ class Dock26_Cookies_Admin
                 'preferences_modal_title' => 'Cookies-Einstellungen',
             ]);
         }
-    }
-
-    public static function dock26_cookies_render_enable_script_blocking_field()
-    {
-        $options = get_option('dock26_cookies_options');
-?>
-        <input type="checkbox" name="dock26_cookies_options[enable_script_blocking]" value="1" <?php checked($options['enable_script_blocking'] ?? true); ?> />
-    <?php
-    }
-
-    public static function dock26_cookies_render_custom_message_field()
-    {
-        $options = get_option('dock26_cookies_options');
-    ?>
-        <textarea name="dock26_cookies_options[custom_message]" rows="5" style="width:100%;"><?php echo esc_textarea($options['custom_message'] ?? ''); ?></textarea>
-    <?php
     }
 
     public static function dock26_cookies_render_imprint_link_field()
@@ -301,8 +267,6 @@ class Dock26_Cookies_Admin
 
     public static function dock26_cookies_sanitize_options($options)
     {
-        $options['enable_script_blocking'] = isset($options['enable_script_blocking']) ? true : false;
-        $options['custom_message'] = sanitize_textarea_field($options['custom_message']);
         $options['imprint_link'] = esc_url_raw($options['imprint_link'] ?? '');
         $options['privacy_policy_link'] = esc_url_raw($options['privacy_policy_link'] ?? '');
         $options['consent_modal_title'] = sanitize_text_field($options['consent_modal_title'] ?? '');
