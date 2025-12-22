@@ -36,33 +36,33 @@ declare global {
 
 document.addEventListener('DOMContentLoaded', async () => {
 
-    console.log(window.dock26Cookies);
     if (window.dock26Cookies.categories.length === 0) {
         console.warn('No consent categories found.');
     }
+
+    const cookieValue = window.CookieConsent.getCookie()
 
     const categories: CookieConsent.CookieConsentConfig['categories'] = {};
     const sections: CookieConsent.Section[] = [];
 
     window.dock26Cookies.categories.forEach(category => {
-        categories[category.id] = {
-            enabled: category.enabled ? true : false,
-            readOnly: category.readOnly ? true : false
+        const categoryId = category.id.toString();
+        categories[categoryId] = {
+            enabled: category.enabled ? cookieValue.categories.includes(categoryId) : false,
+            readOnly: category.readOnly
         };
         sections.push({
             title: category.name,
             description: category.description,
-            linkedCategory: (category.enabled && category.readOnly) ? undefined : category.id
+            linkedCategory: (category.enabled && category.readOnly) ? undefined : categoryId
         });
     });
-
-    console.log(categories);
 
     const settings = window.dock26Cookies.settings;
 
     await CookieConsent.run({
 
-        // root: 'body',
+        root: 'body',
         // autoShow: true,
         disablePageInteraction: true,
         // hideFromBots: true,
