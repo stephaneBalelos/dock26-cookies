@@ -1,8 +1,6 @@
 import './style.css'
 import * as CookieConsent from 'vanilla-cookieconsent'
 
-
-console.log('Initialized')
 /**
  * All config. options available here:
  * https://cookieconsent.orestbida.com/reference/configuration-reference.html
