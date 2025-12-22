@@ -94,7 +94,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     },
 
     onChange: ({ changedCategories, changedServices }) => {
-      console.log("onChange fired!", changedCategories, changedServices);
       handleConsentChange(changedCategories, changedServices);
     },
 
@@ -167,7 +166,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     // If a consent has been removed, reload the page
     let shouldReload = false;
     changedCategories.forEach((category) => {
-      console.log(category, cookieValue.categories);
       if (!cookieValue.categories.includes(category)) {
         shouldReload = true;
       }
@@ -185,7 +183,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       return;
     }
     button.addEventListener("click", () => {
-      console.log("Cookie consent button clicked");
       CookieConsent.showPreferences();
     });
   };
