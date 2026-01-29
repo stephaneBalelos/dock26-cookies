@@ -37,11 +37,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   const sections: CookieConsent.Section[] = [];
   const settings = window.dock26Cookies.settings;
 
+
   window.dock26Cookies.categories.forEach((category) => {
     const categoryId = category.id.toString();
     categories[categoryId] = {
       enabled: category.enabled
-        ? cookieValue.categories.includes(categoryId)
+        ? cookieValue.categories && cookieValue.categories.includes(categoryId)
         : false,
       readOnly: category.readOnly,
     };
