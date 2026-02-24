@@ -82,6 +82,7 @@ class Dock26_Cookies_Admin
         $description = get_post_meta($post->ID, '_consent_description', true);
         $isReadOnly  = get_post_meta($post->ID, '_consent_readonly', true);
         $isEnabled   = get_post_meta($post->ID, '_consent_enabled', true);
+        $blockExternal = get_post_meta($post->ID, '_consent_block_external', true);
 
         echo '<p>';
         echo '<label><strong>Name:</strong></label><br>';
@@ -102,6 +103,11 @@ class Dock26_Cookies_Admin
         echo '<label><strong>Read Only:</strong></label><br>';
         echo '<input type="checkbox" name="consent_readonly" value="1" ' . checked($isReadOnly, true, false) . ' />';
         echo '</p>';
+
+        echo '<p>';
+        echo '<label><strong>Block External:</strong></label><br>';
+        echo '<input type="checkbox" name="consent_block_external" value="1" ' . checked($blockExternal, true, false) . ' />';
+        echo '</p>';
     }
 
     public static function dock26_cookies_save_consent_category_meta($post_id)
@@ -121,6 +127,11 @@ class Dock26_Cookies_Admin
             update_post_meta($post_id, '_consent_readonly', $_POST['consent_readonly'] === '1' ? '1' : '0');
         } else {
             update_post_meta($post_id, '_consent_readonly', '0');
+        }
+        if (array_key_exists('consent_block_external', $_POST)) {
+            update_post_meta($post_id, '_consent_block_external', $_POST['consent_block_external'] === '1' ? '1' : '0');
+        } else {
+            update_post_meta($post_id, '_consent_block_external', '0');
         }
     }
 

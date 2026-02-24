@@ -14,6 +14,9 @@ class Dock26_Cookies_Main
         add_action('wp_enqueue_scripts', ['Dock26_Cookies_Main', 'enqueue_assets'], 8);
         add_action('admin_init', ['Dock26_Cookies_Admin', 'dock26_cookies_register_settings']);
 
+        add_filter( 'render_block_core/embed', ['Dock26_Cookies_Main', 'render_block_or_prompt_consent'], 10, 2 );
+
+
         // Update the plugin version by changing the version number
         $new_version = DOCK26_COOKIES_PLUGIN_VERSION;
 
@@ -65,6 +68,7 @@ class Dock26_Cookies_Main
                 'description' => isset($cats[$key]->meta['_consent_description']) ? $cats[$key]->meta['_consent_description'][0] : '',
                 'enabled' => isset($cats[$key]->meta['_consent_enabled']) ? $cats[$key]->meta['_consent_enabled'][0] === '1' : false,
                 'readOnly' => isset($cats[$key]->meta['_consent_readonly']) ? $cats[$key]->meta['_consent_readonly'][0] === '1' : false,
+                'blockExternal' => isset($cats[$key]->meta['_consent_block_external']) ? $cats[$key]->meta['_consent_block_external'][0] === '1' : false,
                 'id' => $cat->ID
             );
         }
@@ -75,6 +79,29 @@ class Dock26_Cookies_Main
         new Dock26_Cookies_Admin();
 
         self::register_shortcode();
+    }
+
+    public static function render_block_or_prompt_consent($block_content, $block) {
+        $cookie = json_decode(stripslashes($_COOKIE['cc_cookie']));
+        
+        $consent_categories = self::get_categories();
+
+        $externalConsent = [];
+
+        for ($i=0; $i < count($consent_categories); $i++) { 
+            $category = $consent_categories[$i];
+            if($category['blockExternal']) {
+                if (in_array($category['id'], $cookie->categories)) {
+                    $externalConsent[] = [$category['id'] => true];
+                }
+            }
+        }
+
+        if (count($externalConsent) > 0) {
+            return $block_content;
+        } else {
+            return '<button id="dock-26-cookies-trigger-cc" class="map-accept-cookies-button wp-block-button__link wp-element-button">Cookies-Einstellungen</button>';
+        }
     }
 
     public static function register_shortcode()
