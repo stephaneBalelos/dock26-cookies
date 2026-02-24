@@ -1,5 +1,24 @@
 {
-    "require": {
-        "roots/acorn": "^5.0"
+  "name": "dock26/dock26-cookies",
+  "autoload": {
+  "psr-4": {
+    "Dock26Cookies\\": "App/"
+  }
+},
+"extra": {
+  "acorn": {
+    "providers": [
+      "Dock26Cookies\\Providers\\PluginServiceProvider"
+    ]
+  }
+},
+  "authors": [
+    {
+      "name": "StephaneDock",
+      "email": "stephane.dondyas@dock26.de"
     }
+  ],
+  "require": {
+    "roots/acorn": "^5.0"
+  }
 }
