@@ -1,5 +1,7 @@
 <?php
+
 namespace Dock26Cookies;
+
 if (!defined('ABSPATH')) {
     exit; // Exit if accessed directly
 }
@@ -10,11 +12,13 @@ class Admin
     public function __construct()
     {
         add_action('init', [\Dock26Cookies\Admin::class, 'dock26_cookies_register_consent_category_cpt']);
+        add_action('admin_menu', [\Dock26Cookies\Admin::class, 'add_admin_menu']);
+        add_action('admin_enqueue_scripts', [\Dock26Cookies\Admin::class, 'enqueue_admin_assets']);
         add_action('add_meta_boxes', [\Dock26Cookies\Admin::class, 'dock26_cookies_add_consent_category_meta']);
         add_action('save_post', [\Dock26Cookies\Admin::class, 'dock26_cookies_save_consent_category_meta']);
         add_action('admin_menu', [\Dock26Cookies\Admin::class, 'dock26_cookies_register_admin_menu']);
 
-                // Add Column For Custom Fields
+        // Add Column For Custom Fields
         add_filter('manage_consent_category_posts_columns', function ($columns) {
             $columns['id'] = 'ID';
             $columns['consent_name'] = 'Name';
@@ -39,6 +43,32 @@ class Admin
                     break;
             }
         }, 10, 2);
+    }
+
+    public static function add_admin_menu()
+    {
+        add_menu_page(
+            'Dock26 Cookies',
+            'Dock26 Cookies',
+            'manage_options',
+            'dock26-cookies',
+            function () {
+                echo view('admin');
+            },
+            'dashicons-shield',
+            25
+        );
+    }
+
+    public static function enqueue_admin_assets($hook)
+    {
+        if ($hook !== 'toplevel_page_dock26-cookies') {
+            return;
+        }
+
+        // Add vue from CDN
+        wp_enqueue_script('dock26-cookies-admin-js', plugins_url('../admin/dist/assets/js/admin.iife.js', __FILE__), array(), DOCK26_COOKIES_PLUGIN_VERSION, true);
+        wp_enqueue_style('dock26-cookies-admin-css', plugins_url('../admin/dist/assets/css/admin.css', __FILE__), array(), DOCK26_COOKIES_PLUGIN_VERSION);
     }
 
     // Register Admin Menu
@@ -238,7 +268,7 @@ class Admin
     public static function dock26_cookies_render_imprint_link_field()
     {
         $options = get_option('dock26_cookies_options');
-    ?>
+?>
         <input type="text" name="dock26_cookies_options[imprint_link]" value="<?php echo esc_url($options['imprint_link'] ?? ''); ?>" style="width:100%;" />
     <?php
     }
@@ -264,7 +294,7 @@ class Admin
         $options = get_option('dock26_cookies_options');
     ?>
         <textarea name="dock26_cookies_options[consent_modal_description]" rows="5" style="width:100%;"><?php echo esc_textarea($options['consent_modal_description'] ?? ''); ?></textarea>
-<?php
+    <?php
     }
 
     public static function dock26_cookies_render_preferences_modal_title_field()
@@ -272,7 +302,7 @@ class Admin
         $options = get_option('dock26_cookies_options');
     ?>
         <input type="text" name="dock26_cookies_options[preferences_modal_title]" value="<?php echo esc_attr($options['preferences_modal_title'] ?? ''); ?>" style="width:100%;" />
-    <?php
+<?php
     }
 
     public static function dock26_cookies_sanitize_options($options)
