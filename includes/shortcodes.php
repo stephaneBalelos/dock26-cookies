@@ -1,11 +1,20 @@
 <?php
-
+namespace Dock26Cookies;
 if (!defined('ABSPATH')) {
     exit; // Exit if accessed directly
 }
 
-class Dock26_Cookies_Shortcode
+class Shortcode
 {
+
+    public static function init() {
+        self::register_shortcode();
+    }
+
+    public static function register_shortcode()
+    {
+        add_shortcode('dock26_cookies', [\Dock26Cookies\Shortcode::class, 'render']);
+    }
 
     public static function render($atts)
     {
@@ -15,4 +24,6 @@ class Dock26_Cookies_Shortcode
         return '<div id="dock26-cookies-container" data-id="' . esc_attr($atts['id']) . '"></div>';
 
     }
+
+
 }

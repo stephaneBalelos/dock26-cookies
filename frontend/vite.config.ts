@@ -4,7 +4,7 @@ export default defineConfig({
     build: {
         lib: {
             entry: {
-                main: 'src/main.ts',
+                frontend: 'src/main.ts',
             },
             name: 'dock26_cookies',
             fileName: (format, entryName) => `assets/js/${entryName}.${format}.js`,

@@ -1,19 +1,18 @@
 <?php
-
+namespace Dock26Cookies;
 if (!defined('ABSPATH')) {
     exit; // Exit if accessed directly
 }
 
-class Dock26_Cookies_Admin
+class Admin
 {
 
     public function __construct()
     {
-        self::dock26_cookies_register_consent_category_cpt();
-        add_action('add_meta_boxes', ['Dock26_Cookies_Admin', 'dock26_cookies_add_consent_category_meta']);
-        add_action('save_post', ['Dock26_Cookies_Admin', 'dock26_cookies_save_consent_category_meta']);
-
-        add_action('admin_menu', ['Dock26_Cookies_Admin', 'dock26_cookies_register_admin_menu']);
+        add_action('init', [\Dock26Cookies\Admin::class, 'dock26_cookies_register_consent_category_cpt']);
+        add_action('add_meta_boxes', [\Dock26Cookies\Admin::class, 'dock26_cookies_add_consent_category_meta']);
+        add_action('save_post', [\Dock26Cookies\Admin::class, 'dock26_cookies_save_consent_category_meta']);
+        add_action('admin_menu', [\Dock26Cookies\Admin::class, 'dock26_cookies_register_admin_menu']);
 
                 // Add Column For Custom Fields
         add_filter('manage_consent_category_posts_columns', function ($columns) {
@@ -69,7 +68,7 @@ class Dock26_Cookies_Admin
         add_meta_box(
             'dock26_cookies_consent_meta',
             'Category Details',
-            ['Dock26_Cookies_Admin', 'dock26_cookies_render_consent_meta'],
+            [\Dock26Cookies\Admin::class, 'dock26_cookies_render_consent_meta'],
             'consent_category',
             'normal',
             'default'

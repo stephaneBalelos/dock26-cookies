@@ -1,5 +1,5 @@
-import "./style.css";
 import * as CookieConsent from "vanilla-cookieconsent";
+import "vanilla-cookieconsent/dist/cookieconsent.css";
 
 /**
  * All config. options available here:
@@ -24,26 +24,29 @@ declare global {
       settings: Dock26CookieConsentSettings;
       categories: Dock26CookieConsentCategories[];
     };
+    CookieConsent: typeof CookieConsent;
   }
 }
 
+window.CookieConsent = CookieConsent;
+
 document.addEventListener("DOMContentLoaded", async () => {
+  console.log(
+    "Initializing Cookie Consent with categories:",
+    window.dock26Cookies,
+  );
   if (window.dock26Cookies.categories.length === 0) {
     console.warn("No consent categories found.");
   }
 
-  const cookieValue = window.CookieConsent.getCookie();
   const categories: CookieConsent.CookieConsentConfig["categories"] = {};
   const sections: CookieConsent.Section[] = [];
   const settings = window.dock26Cookies.settings;
 
-
   window.dock26Cookies.categories.forEach((category) => {
     const categoryId = category.id.toString();
     categories[categoryId] = {
-      enabled: category.enabled
-        ? cookieValue.categories && cookieValue.categories.includes(categoryId)
-        : false,
+      enabled: category.enabled,
       readOnly: category.readOnly,
     };
     sections.push({
@@ -160,7 +163,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     changedCategories: string[],
     _changedServices: {
       [key: string]: string[];
-    }
+    },
   ) {
     const cookieValue = window.CookieConsent.getCookie();
     // Check for each changed categories if the Consent ist given or revoked

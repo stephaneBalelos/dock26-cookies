@@ -1,21 +1,16 @@
 <?php
 
+namespace Dock26Cookies;
+
 if (!defined('ABSPATH')) {
     exit; // Exit if accessed directly
 }
 
-class Dock26_Cookies_Main
+class Main
 {
 
     public static function install()
     {
-
-        add_action('init', ['Dock26_Cookies_Main', 'init']);
-        add_action('wp_enqueue_scripts', ['Dock26_Cookies_Main', 'enqueue_assets'], 8);
-        add_action('admin_init', ['Dock26_Cookies_Admin', 'dock26_cookies_register_settings']);
-
-        add_filter( 'render_block_core/embed', ['Dock26_Cookies_Main', 'render_block_or_prompt_consent'], 10, 2 );
-
 
         // Update the plugin version by changing the version number
         $new_version = DOCK26_COOKIES_PLUGIN_VERSION;
@@ -32,25 +27,37 @@ class Dock26_Cookies_Main
             // Update the plugin version in the database
             update_option('dock26_cookies_plugin_version', $new_version);
         }
-
     }
+
+    public static function init()
+    {
+        new \Dock26Cookies\Admin();
+
+        \Dock26Cookies\Shortcode::init();
+
+        add_action('init', [\Dock26Cookies\Main::class, 'init']);
+
+        self::enqueue_assets();
+
+        add_filter('render_block_core/embed', [\Dock26Cookies\Main::class, 'render_block_or_prompt_consent'], 10, 2);
+    }
+
 
     public static function enqueue_assets()
     {
-        //Enqueue Styles
-        wp_enqueue_style('dock26_cookieconsent', plugins_url('../orestbida-cc/3.1.0/cookieconsent.css', __FILE__), [], DOCK26_COOKIES_PLUGIN_VERSION);
-        // wp_enqueue_style('dock26_cookies_main', plugins_url('../dist/assets/css/main.css', __FILE__), ['dock26_cookieconsent'], DOCK26_COOKIES_PLUGIN_VERSION);
         // Enqueue Scripts
-        wp_enqueue_script('dock26_cookieconsent_js', plugins_url('../orestbida-cc/3.1.0/cookieconsent.umd.js', __FILE__), [], DOCK26_COOKIES_PLUGIN_VERSION);
-        wp_enqueue_script('dock26_cookies_main', plugins_url('../dist/assets/js/main.iife.js', __FILE__), ['dock26_cookieconsent_js'], DOCK26_COOKIES_PLUGIN_VERSION);
+        wp_enqueue_script('dock26_cookieconsent_js', plugins_url('../frontend/dist/assets/js/frontend.iife.js', __FILE__), []);
+        // Enqueue Styles
+        wp_enqueue_style('dock26_cookieconsent_css', plugins_url('../frontend/dist/assets/css/frontend.css', __FILE__), []);
 
-        wp_localize_script('dock26_cookies_main', 'dock26Cookies', [
+        wp_localize_script('dock26_cookieconsent_js', 'dock26Cookies', [
             'settings' => get_option('dock26_cookies_options'),
             'categories' => self::get_categories(),
         ]);
     }
 
-    public static function get_categories() {
+    public static function get_categories()
+    {
         $categories = array();
         $cats = get_posts([
             'post_type' => 'consent_category',
@@ -74,23 +81,22 @@ class Dock26_Cookies_Main
         }
         return $categories;
     }
+    public static function render_block_or_prompt_consent($block_content, $block)
+    {
 
-    public static function init() {
-        new Dock26_Cookies_Admin();
+        if (!isset($_COOKIE['cc_cookie'])) {
+            return '<button id="dock-26-cookies-trigger-cc" class="map-accept-cookies-button wp-block-button__link wp-element-button">Cookies-Einstellungen</button>';
+        }
 
-        self::register_shortcode();
-    }
-
-    public static function render_block_or_prompt_consent($block_content, $block) {
         $cookie = json_decode(stripslashes($_COOKIE['cc_cookie']));
-        
+
         $consent_categories = self::get_categories();
 
         $externalConsent = [];
 
-        for ($i=0; $i < count($consent_categories); $i++) { 
+        for ($i = 0; $i < count($consent_categories); $i++) {
             $category = $consent_categories[$i];
-            if($category['blockExternal']) {
+            if ($category['blockExternal']) {
                 if (in_array($category['id'], $cookie->categories)) {
                     $externalConsent[] = [$category['id'] => true];
                 }
@@ -102,11 +108,6 @@ class Dock26_Cookies_Main
         } else {
             return '<button id="dock-26-cookies-trigger-cc" class="map-accept-cookies-button wp-block-button__link wp-element-button">Cookies-Einstellungen</button>';
         }
-    }
-
-    public static function register_shortcode()
-    {
-        add_shortcode('dock26_cookies', ['Dock26_Cookies_Shortcode', 'render']);
     }
 
     public static function activate() {}

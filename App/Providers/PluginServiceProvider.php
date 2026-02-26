@@ -3,6 +3,7 @@
 namespace Dock26Cookies\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Dock26Cookies\Main;
 
 class PluginServiceProvider extends ServiceProvider
 {
@@ -13,18 +14,13 @@ class PluginServiceProvider extends ServiceProvider
 
     public function boot()
     {
-        add_action('admin_menu', function () {
-            add_menu_page(
-                'Acorn Plugin',
-                'Acorn Plugin',
-                'manage_options',
-                'dock26-cookies',
-                function () {
-                    echo view('admin');
-                },
-                'dashicons-admin-generic',
-                20
-            );
-        });
+        // Install the plugin
+        Main::install();
+        // Initialize the plugin
+        Main::init();
+        // Register activation, deactivation, and uninstall hooks
+        register_activation_hook(__FILE__, [\Dock26Cookies\Main::class, 'activate']);
+        register_deactivation_hook(__FILE__, [\Dock26Cookies\Main::class, 'deactivate']);
+        register_uninstall_hook(__FILE__, [\Dock26Cookies\Main::class, 'uninstall']);
     }
 }
