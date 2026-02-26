@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import Navbar from '@/components/Navbar.vue';
 import Home from '@/pages/index.vue';
 import Settings from '@/pages/settings.vue';
@@ -21,6 +21,22 @@ const currentView = computed(() => {
     default:
       return Home
   }
+})
+
+onMounted(() => {
+  fetch('/api/dock26-cookies/v1/status', {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  })
+    .then(response => response.json())
+    .then(data => {
+      console.log('API Response:', data) // Debugging log
+    })
+    .catch(error => {
+      console.error('API Error:', error) // Debugging log
+    })
 })
 
 </script>
