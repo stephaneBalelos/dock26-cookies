@@ -6,6 +6,7 @@ import Settings from '@/pages/settings.vue';
 
 const currentPath = ref<string>(window.location.hash || '/')
 
+
 window.addEventListener('hashchange', () => {
   currentPath.value = window.location.hash
   console.log('Current path:', currentPath.value) // Debugging log
@@ -42,7 +43,13 @@ onMounted(() => {
 </script>
 
 <template>
-    <Navbar />
-    <h1>Dock26 Cookies Admin</h1>
-    <component :is="currentView" />
+  <UApp>
+    <div class="flex flex-col min-h-screen bg-gray-100">
+      <Navbar />
+      <main class="flex-1 p-4 overflow-auto">
+        <component :is="currentView" />
+      </main>
+    </div>
+  </UApp>
+
 </template>

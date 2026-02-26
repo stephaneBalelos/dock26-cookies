@@ -42,9 +42,13 @@ class Main
         add_filter('render_block_core/embed', [\Dock26Cookies\Main::class, 'render_block_or_prompt_consent'], 10, 2);
     }
 
-
     public static function enqueue_assets()
     {
+        // Only enqueue on frontend
+        if (is_admin()) {
+            return;
+        }
+
         // Enqueue Scripts
         wp_enqueue_script('dock26_cookieconsent_js', plugins_url('../frontend/dist/assets/js/frontend.iife.js', __FILE__), []);
         // Enqueue Styles
