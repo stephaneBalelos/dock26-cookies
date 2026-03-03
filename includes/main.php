@@ -8,10 +8,8 @@ if (!defined('ABSPATH')) {
 
 class Main
 {
-
     public static function install()
     {
-
         // Update the plugin version by changing the version number
         $new_version = DOCK26_COOKIES_PLUGIN_VERSION;
 
@@ -31,15 +29,53 @@ class Main
 
     public static function init()
     {
-        new \Dock26Cookies\Admin();
+        // Register Custom Post Type for Consent Services
+        self::register_consent_service_category_taxonomy();
+        self::register_consent_service_cpt();
 
-        \Dock26Cookies\Shortcode::init();
 
-        add_action('init', [\Dock26Cookies\Main::class, 'init']);
+        self::init_admin();
 
-        self::enqueue_assets();
+        add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_assets']);
 
-        add_filter('render_block_core/embed', [\Dock26Cookies\Main::class, 'render_block_or_prompt_consent'], 10, 2);
+        add_action('rest_api_init', [\Dock26Cookies\Main::class, 'init_rest_api']);
+    }
+
+    public static function register_consent_service_cpt()
+    {
+        // Register Consent Service Custom Post Type
+
+        $labels = array(
+            'name'               => 'Consent Services',
+            'singular_name'      => 'Consent Service'
+        );
+
+        $args = array(
+            'labels'            => $labels,
+            'public'            => true,
+            'show_ui'           => true,
+            'menu_position'      => 25,
+            'menu_icon'          => 'dashicons-shield',
+        );
+        register_post_type('d26cookies_consent_service', $args);
+    }
+
+    public static function register_consent_service_category_taxonomy()
+    {
+        // Register Consent Service Category Taxonomy
+        $labels = array(
+            'name'              => 'Consent Service Categories',
+            'singular_name'     => 'Consent Service Category',
+        );
+        $args = array(
+            'labels'            => $labels,
+            'show_ui'           => true,
+            'show_in_menu'      => true,
+            'hierarchical'      => false,
+            'show_admin_column' => true,
+            'show_in_rest' => true,
+        );
+        register_taxonomy('d26cookies_consent_service_cat', ['d26cookies_consent_service'], $args);
     }
 
     public static function enqueue_assets()
@@ -55,63 +91,31 @@ class Main
         wp_enqueue_style('dock26_cookieconsent_css', plugins_url('../frontend/dist/assets/css/frontend.css', __FILE__), []);
 
         wp_localize_script('dock26_cookieconsent_js', 'dock26Cookies', [
-            'settings' => get_option('dock26_cookies_options'),
+            'settings' => array(),
             'categories' => self::get_categories(),
         ]);
     }
 
+    public static function init_rest_api()
+    {
+        $api_controller = new \Dock26Cookies\APIController();
+        $api_controller->register_routes();
+    }
+
+    public static function init_admin()
+    {
+        \Dock26Cookies\Admin::init();
+    }
+
     public static function get_categories()
     {
-        $categories = array();
-        $cats = get_posts([
-            'post_type' => 'consent_category',
-            'numberposts' => 99,
-            'post_status' => 'publish',
-            'orderby' => 'ID',
-            'order' => 'ASC',
+        $categories = get_terms([
+            'taxonomy' => 'd26cookies_consent_service_category',
+            'number' => 99,
+            'hide_empty' => false
         ]);
 
-        foreach ($cats as $key => $cat) {
-            $cats[$key]->meta = get_post_meta($cat->ID);
-
-            $categories[] = array(
-                'name' => isset($cats[$key]->meta['_consent_name']) ? $cats[$key]->meta['_consent_name'][0] : 'category_' . $cat->ID,
-                'description' => isset($cats[$key]->meta['_consent_description']) ? $cats[$key]->meta['_consent_description'][0] : '',
-                'enabled' => isset($cats[$key]->meta['_consent_enabled']) ? $cats[$key]->meta['_consent_enabled'][0] === '1' : false,
-                'readOnly' => isset($cats[$key]->meta['_consent_readonly']) ? $cats[$key]->meta['_consent_readonly'][0] === '1' : false,
-                'blockExternal' => isset($cats[$key]->meta['_consent_block_external']) ? $cats[$key]->meta['_consent_block_external'][0] === '1' : false,
-                'id' => $cat->ID
-            );
-        }
         return $categories;
-    }
-    public static function render_block_or_prompt_consent($block_content, $block)
-    {
-
-        if (!isset($_COOKIE['cc_cookie'])) {
-            return '<button id="dock-26-cookies-trigger-cc" class="map-accept-cookies-button wp-block-button__link wp-element-button">Cookies-Einstellungen</button>';
-        }
-
-        $cookie = json_decode(stripslashes($_COOKIE['cc_cookie']));
-
-        $consent_categories = self::get_categories();
-
-        $externalConsent = [];
-
-        for ($i = 0; $i < count($consent_categories); $i++) {
-            $category = $consent_categories[$i];
-            if ($category['blockExternal']) {
-                if (in_array($category['id'], $cookie->categories)) {
-                    $externalConsent[] = [$category['id'] => true];
-                }
-            }
-        }
-
-        if (count($externalConsent) > 0) {
-            return $block_content;
-        } else {
-            return '<button id="dock-26-cookies-trigger-cc" class="map-accept-cookies-button wp-block-button__link wp-element-button">Cookies-Einstellungen</button>';
-        }
     }
 
     public static function activate() {}

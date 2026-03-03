@@ -1,12 +1,18 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, inject } from 'vue'
 import Navbar from '@/components/Navbar.vue';
 import Home from '@/pages/index.vue';
 import Settings from '@/pages/settings.vue';
 
+const apiUrl = inject('apiUrl', '')
+const nonce = inject('nonce', '')
+
+if (!apiUrl || !nonce) {
+  console.error('API URL or nonce not provided')
+  throw new Error('API URL or nonce not provided')
+}
+
 const currentPath = ref<string>(window.location.hash || '/')
-
-
 window.addEventListener('hashchange', () => {
   currentPath.value = window.location.hash
   console.log('Current path:', currentPath.value) // Debugging log
@@ -22,22 +28,6 @@ const currentView = computed(() => {
     default:
       return Home
   }
-})
-
-onMounted(() => {
-  fetch('/api/dock26-cookies/v1/consent-categories', {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  })
-    .then(response => response.json())
-    .then(data => {
-      console.log('API Response:', data) // Debugging log
-    })
-    .catch(error => {
-      console.error('API Error:', error) // Debugging log
-    })
 })
 
 </script>
