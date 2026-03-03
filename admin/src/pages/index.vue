@@ -5,7 +5,11 @@
 </template>
 
 <script setup lang="ts">
+import { onUnmounted } from 'vue'
 
+onUnmounted(() => {
+    console.log('Unmounted')
+})
 </script>
 
 <style scoped>

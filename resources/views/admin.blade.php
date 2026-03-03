@@ -1,1 +1,0 @@
-<div id="app" class="isolate"></div>

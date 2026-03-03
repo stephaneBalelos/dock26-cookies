@@ -25,7 +25,7 @@ const currentView = computed(() => {
 })
 
 onMounted(() => {
-  fetch('/api/dock26-cookies/v1/status', {
+  fetch('/api/dock26-cookies/v1/consent-categories', {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',

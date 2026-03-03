@@ -53,7 +53,7 @@ class Admin
             'manage_options',
             'dock26-cookies',
             function () {
-                echo view('admin');
+                echo '<div id="dock26-cookies-admin-app"></div>';
             },
             'dashicons-shield',
             25

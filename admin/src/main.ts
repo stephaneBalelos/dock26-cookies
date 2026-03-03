@@ -21,4 +21,4 @@ app.use(ui, {
     prefix: "tw",
   },
 })
-app.mount("#app");
+app.mount("#dock26-cookies-admin-app");
