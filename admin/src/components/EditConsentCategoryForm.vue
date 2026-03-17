@@ -1,23 +1,23 @@
 <template>
-    <UModal     :close="{
-      color: 'primary',
-      variant: 'outline',
-      class: 'rounded-full'
-    }">
-        <UButton label="Open" color="neutral" variant="subtle" />
-
-        <template #content>
+    <UCard title="Kategorie bearbeiten" :description="props.id">
+        <template #default>
             <UForm :state="state" class="space-y-4" @submit="onSubmit">
-                <UFormField label="Name" name="name">
-                    <UInput v-model="state.name" />
+                <UFormField label="Kategorie Name" name="name">
+                    <UInput v-model="state.name" class="w-full" />
                 </UFormField>
-
-                <UButton type="submit">
-                    Submit
-                </UButton>
+                <UFormField v-if="props.id" label="Beschreibung" name="description">
+                    <UTextarea v-model="state.description" class="w-full" />
+                </UFormField>
+                <div class="flex items-center py-4 gap-2">
+                    <UButton type="submit">
+                        Speichern
+                    </UButton>
+                    <UButton v-if="props.id" :icon="'i-heroicons-trash'" color="error" variant="ghost"
+                        @click="onDelete()" />
+                </div>
             </UForm>
         </template>
-    </UModal>
+    </UCard>
 </template>
 
 <script setup lang="ts">
@@ -27,38 +27,61 @@ import { onMounted, reactive } from 'vue';
 
 
 type Props = {
-    id: string
+    id?: string
 }
 
-const $emits = defineEmits(['updated'])
+const $emits = defineEmits(['created', 'updated', 'deleted'])
 
 const props = defineProps<Props>()
 
 const client = useClient()
 
-const overlays = useOverlay()
 
 const state = reactive({
-    name: ''
+    name: '',
+    description: ''
 })
 
-async function onSubmit(event: FormSubmitEvent<{ name: string }>) {
-    console.log(event.data)
+async function onSubmit(event: FormSubmitEvent<{ name: string, description: string }>) {
     try {
-        const res = await client.updateConsentCategory(props.id, event.data.name)
-        console.log(res)
-        $emits('updated')
-        overlays.closeAll()
+        if (props.id) {
+            const res = await client.updateConsentCategory(props.id, {
+                name: event.data.name,
+                description: event.data.description
+            })
+            console.log(res)
+            $emits('updated')
+        } else {
+            const res = await client.createConsentCategory(event.data.name)
+            console.log(res)
+            $emits('created')
+        }
+    } catch (error) {
+        console.log(error)
+    }
+}
+
+async function onDelete() {
+    try {
+        if (props.id) {
+            const res = await client.deleteConsentCategory(props.id)
+            console.log(res)
+            $emits('deleted')
+        }
     } catch (error) {
         console.log(error)
     }
 }
 
 onMounted(async () => {
+    if (!props.id) {
+        return
+    }
     try {
         const res = await client.getConsentCategory(props.id)
         console.log(res)
         state.name = res.name
+        state.description = res.description
     } catch (error) {
         console.error(error)
     }

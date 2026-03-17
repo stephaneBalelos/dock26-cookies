@@ -12,6 +12,7 @@ use WP_REST_Server;
 use WP_REST_Request;
 use WP_REST_Response;
 use WP_Tax_Query;
+use WP_Term;
 
 class APIController extends WP_REST_Controller
 {
@@ -108,7 +109,16 @@ class APIController extends WP_REST_Controller
             'hide_empty' => false,
         ]);
 
-        return $categories;
+
+
+        return array_map(function (WP_Term $item) {
+            return [
+                'id' => $item->term_id,
+                'name' => $item->name,
+                'description' => $item->description,
+                'slug' => $item->slug
+            ];
+        }, $categories);
     }
     public static function create_consent_service_categories(WP_REST_Request $request)
     {
@@ -140,7 +150,8 @@ class APIController extends WP_REST_Controller
         $data = $request->get_json_params();
 
         $result = wp_update_term($parameters['id'], 'd26cookies_consent_service_cat', [
-            'name' => $data['category_name']
+            'name' => $data['category_name'],
+            'description' => $data['category_description']
         ]);
 
         if($result) {

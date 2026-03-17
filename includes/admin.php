@@ -24,7 +24,7 @@ class Admin
             'manage_options',
             'dock26-cookies',
             function () {
-                echo '<div id="dock26-cookies-admin-app"></div>';
+                echo '<div id="dock26-cookies-admin-app" class="isolate"></div>';
             },
             'dashicons-shield',
             25

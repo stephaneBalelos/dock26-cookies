@@ -1,4 +1,6 @@
 import { computed, inject } from "vue";
+import type { ConsentCategory } from "../../../types"
+
 
 export function useClient() {
   const apiUrl = inject("apiUrl", "");
@@ -14,7 +16,7 @@ export function useClient() {
   async function jsonQuery(
     url: string,
     method: string,
-    data?: Record<string, string | number>,
+    data?: Record<string, any>,
   ) {
     const res = await fetch(url, {
       method: method,
@@ -25,8 +27,8 @@ export function useClient() {
     return await res.json();
   }
 
-  async function getConsentCategories() {
-    return jsonQuery(`${apiUrl}/categories`, "GET");
+  async function getConsentCategories(): Promise<ConsentCategory[]> {
+    return jsonQuery(`${apiUrl}/categories`, "GET")
   }
 
   async function createConsentCategory(name: string) {
@@ -35,13 +37,15 @@ export function useClient() {
     });
   }
 
-  async function getConsentCategory(id: string) {
+  async function getConsentCategory(id: string): Promise<ConsentCategory> {
     return jsonQuery(`${apiUrl}/categories/${id}`, "GET");
   }
 
-  async function updateConsentCategory(id: string, name: string) {
+  async function updateConsentCategory(id: string, data: {name: string, description?: string}) {
+    console.log(data)
     return jsonQuery(`${apiUrl}/categories/${id}`, "PUT", {
-      category_name: name,
+      category_name: data.name,
+      category_description: data.description,
     });
   }
 

@@ -2,6 +2,7 @@ import "./style.css";
 import { createApp } from "vue";
 import App from "./App.vue";
 import ui from '@nuxt/ui/vue-plugin'
+import { CookieConsentPlugin } from "./plugins/CookieConsentVue";
 
 
 // declare the global window interface extension for TypeScript
@@ -22,6 +23,7 @@ app.use(ui, {
     prefix: "tw",
   },
 })
+app.use(CookieConsentPlugin, {})
 app.provide("apiUrl", window.dock26CookiesAdmin?.apiUrl || "");
 app.provide("nonce", window.dock26CookiesAdmin?.nonce || "");
 app.mount("#dock26-cookies-admin-app");

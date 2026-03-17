@@ -29,7 +29,6 @@ const currentView = computed(() => {
       return Home
   }
 })
-
 </script>
 
 <template>

@@ -1,64 +1,106 @@
 <template>
-    <div class="">
-        Home
+    <UPage :ui="{
+        center: 'lg:col-span-7',
+        right: 'lg:col-span-3'
+    }">
+        <UPageBody class="mt-0">
+            <h2>Darstellung</h2>
+            <div class="grid grid-cols-3 gap-4">
+                <div class="">
+                    <UPageCard title="Einwilligung Popup"
+                        description="Nuxt UI integrates with latest Tailwind CSS, bringing significant improvements."
+                        class="h-full">
+                        <div class="flex flex-col">
+                            <div class="flex-1 mb-4">
+                                <ConsentModalOptions />
+                            </div>
+                            <UButton :icon="'i-heroicons-eye'" color="neutral" variant="outline"
+                                @click="() => $consentConfig.showConsentModal()">
+                                Einwiligung Modal anzeigen
+                            </UButton>
+                        </div>
+                    </UPageCard>
+                </div>
+                <div>
+                    <UPageCard title="Einwilligung Popup"
+                        description="Nuxt UI integrates with latest Tailwind CSS, bringing significant improvements."
+                        class="h-full">
+                        <div class="flex flex-col">
+                            <div class="flex-1 mb-4">
+                                dsa
+                            </div>
+                            <UButton :icon="'i-heroicons-eye'" color="neutral" variant="outline">
+                                Modal Anzeigen
+                            </UButton>
+                        </div>
+                    </UPageCard>
+                </div>
+            </div>
+        </UPageBody>
+        <template #right>
+            <div>
+                <h2>Cookie Kategorien</h2>
+                <UAccordion v-model="activeCategory" :items="accordionsItems">
+                    <template #body="{ item }">
+                        <EditConsentCategoryForm :id="item.id" @updated="() => {
+                            activeCategory = undefined
+                            loadCategories()
+                        }" @deleted="() => loadCategories()" />
+                    </template>
+                </UAccordion>
 
-        <UForm :state="state" class="space-y-4" @submit="onSubmit">
-            <UFormField label="Name" name="name">
-                <UInput v-model="state.name" />
-            </UFormField>
-
-            <UButton type="submit">
-                Submit
-            </UButton>
-        </UForm>
-
-        <ul class="mt-8">
-            <li v-for="term in categories">
-                {{ term.name }} <EditConsentCategoryForm :id="term.term_id" @updated="loadCategories" />  <UButton @click="() => deleteTerm(term.term_id)">Delete</UButton>
-            </li>
-        </ul>
-    </div>
+                <div v-if="!activeCategory && isAddingNewCategory" class="py-4">
+                    <EditConsentCategoryForm @created="() => {
+                        isAddingNewCategory = false
+                        loadCategories()
+                    }" />
+                </div>
+                <div v-if="!activeCategory" class="py-4 flex justify-center">
+                    <UButton v-if="!isAddingNewCategory" label="New Cookie Kategorie" :icon="'i-heroicons-plus-circle'"
+                        color="neutral" variant="outline" @click="isAddingNewCategory = true" />
+                    <UButton v-if="isAddingNewCategory" label="Abbrechen" color="neutral" variant="ghost"
+                        @click="isAddingNewCategory = false" />
+                </div>
+            </div>
+        </template>
+    </UPage>
 </template>
 
 <script setup lang="ts">
 
+import ConsentModalOptions from '@/components/Customizer/ConsentModalOptions.vue';
+import EditConsentCategoryForm from '@/components/EditConsentCategoryForm.vue';
 import { useClient } from '@/composables/client';
-import type { FormSubmitEvent } from '@nuxt/ui';
-import { onMounted, onUnmounted, reactive, ref } from 'vue'
+import { useConsentConfig } from '@/composables/useConsentConfig';
+// import { d26CookieConsentKey } from '@/plugins/CookieConsentVue';
+import type { AccordionItem } from '@nuxt/ui';
+import { computed, inject, onMounted, onUnmounted, ref } from 'vue'
 
-const categories = ref([])
 const client = useClient()
 
-const state = reactive({
-    name: ''
+const $consentConfig = useConsentConfig()
+
+const isAddingNewCategory = ref(false)
+const activeCategory = ref()
+
+const accordionsItems = computed<AccordionItem[]>(() => {
+    const categories = $consentConfig.consentCategories.value
+    return categories.map((cat) => {
+        const item: AccordionItem = {
+            label: cat.name,
+            id: cat.id
+        }
+        console.log(item)
+        return item
+    })
 })
 
-async function onSubmit(event: FormSubmitEvent<{ name: string }>) {
-    console.log(event.data)
-    try {
-        const res = await client.createConsentCategory(event.data.name)
-        console.log(res)
-        loadCategories()
-    } catch (error) {
-        console.log(error)
-    }
-}
-
-async function deleteTerm(id: string) {
-    try {
-        const res = await client.deleteConsentCategory(id)
-        console.log(res)
-        loadCategories()
-    } catch (error) {
-        console.error(error)
-    }
-}
-
 async function loadCategories() {
-        try {
+    try {
         const res = await client.getConsentCategories()
-        console.log(res)
-        categories.value = res
+        $consentConfig.init({
+            categories: res
+        })
     } catch (err) {
         console.error(err)
     }
