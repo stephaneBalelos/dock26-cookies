@@ -23,7 +23,6 @@ export function useClient() {
       headers: requestHeader.value,
       body: data ? JSON.stringify(data) : null,
     });
-
     return await res.json();
   }
 
@@ -35,6 +34,12 @@ export function useClient() {
     return jsonQuery(`${apiUrl}/categories`, "POST", {
       category_name: name,
     });
+  }
+
+  async function updateConsentCategoriesOrder(order: number[]) {
+    return jsonQuery(`${apiUrl}/categories`, "put", {
+      categories_sort: order
+    })
   }
 
   async function getConsentCategory(id: string): Promise<ConsentCategory> {
@@ -55,6 +60,7 @@ export function useClient() {
 
   return {
     getConsentCategories,
+    updateConsentCategoriesOrder,
     createConsentCategory,
     getConsentCategory,
     updateConsentCategory,

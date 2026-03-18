@@ -74,6 +74,10 @@ class Main
             'hierarchical'      => false,
             'show_admin_column' => true,
             'show_in_rest' => true,
+            'default_term' => array(
+                'slug' => 'd26cookies_notwendige',
+                'name' => 'Notwendige',
+            )
         );
         register_taxonomy('d26cookies_consent_service_cat', ['d26cookies_consent_service'], $args);
     }

@@ -34,6 +34,11 @@ class APIController extends WP_REST_Controller
                 'methods' => WP_REST_Server::CREATABLE,
                 'callback' => [$this, 'create_consent_service_categories'],
                 'permission_callback' => [$this, 'permissions_check']
+            ],
+            [
+                'methods' => WP_REST_Server::EDITABLE,
+                'callback' => [$this, 'update_consent_category_order'],
+                'permission_callback' => [$this, 'permissions_check']
             ]
         ]);
         register_rest_route($this->namespace, '/categories/(?P<id>[\d]+)', [
@@ -107,27 +112,50 @@ class APIController extends WP_REST_Controller
         $categories = get_terms([
             'taxonomy' => 'd26cookies_consent_service_cat',
             'hide_empty' => false,
+            'meta_key' => 'consent_category_sort',
+            'orderby' => 'consent_category_sort'
         ]);
-
-
 
         return array_map(function (WP_Term $item) {
             return [
                 'id' => $item->term_id,
                 'name' => $item->name,
                 'description' => $item->description,
-                'slug' => $item->slug
+                'slug' => $item->slug,
+                'order' => get_term_meta($item->term_id, 'consent_category_sort', true)
             ];
         }, $categories);
     }
+
+    public static function update_consent_category_order(WP_REST_Request $request)
+    {
+        $parameters = $request->get_json_params();
+        if (isset($parameters['categories_sort']) && is_array($parameters['categories_sort'])) {
+            foreach ($parameters['categories_sort'] as $key => $term_id) {
+                $res = update_term_meta($term_id, 'consent_category_sort', $key);
+            }
+            return new WP_REST_Response([], 200);
+        } else {
+            return new WP_REST_Response(null, 422);
+        }
+    }
     public static function create_consent_service_categories(WP_REST_Request $request)
     {
-          $parameters = $request->get_json_params();
+        $parameters = $request->get_json_params();
 
-          if(isset($parameters['category_name'])) {
+        if (isset($parameters['category_name'])) {
             $result = wp_insert_term($parameters['category_name'], 'd26cookies_consent_service_cat', []);
+
+            // Set Order
+            $categories = get_terms([
+                'taxonomy' => 'd26cookies_consent_service_cat',
+                'hide_empty' => false,
+            ]);
+
+            update_term_meta($result['term_id'], 'consent_category_sort', count($categories));
+
             return new WP_REST_Response($result, 200);
-          }
+        }
 
         return new WP_REST_Response(null, 422);
     }
@@ -138,7 +166,7 @@ class APIController extends WP_REST_Controller
 
         $result = get_term($parameters['id'], 'd26cookies_consent_service_cat', ARRAY_A);
 
-        if($result) {
+        if ($result) {
             return new WP_REST_Response($result, 200);
         }
         return new WP_REST_Response(null, 422);
@@ -154,13 +182,13 @@ class APIController extends WP_REST_Controller
             'description' => $data['category_description']
         ]);
 
-        if($result) {
+        if ($result) {
             return new WP_REST_Response($result, 200);
         }
         return new WP_REST_Response(null, 422);
     }
 
-    
+
     public static function delete_consent_service_category(WP_REST_Request $request)
     {
         $parameters = $request->get_url_params();
@@ -173,6 +201,4 @@ class APIController extends WP_REST_Controller
 
         return new WP_REST_Response($result, 422);
     }
-
-    
 }

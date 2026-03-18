@@ -42,6 +42,8 @@ const state = reactive({
     description: ''
 })
 
+const toast = useToast()
+
 async function onSubmit(event: FormSubmitEvent<{ name: string, description: string }>) {
     try {
         if (props.id) {
@@ -65,8 +67,15 @@ async function onDelete() {
     try {
         if (props.id) {
             const res = await client.deleteConsentCategory(props.id)
-            console.log(res)
-            $emits('deleted')
+            if (res == true) {
+                $emits('deleted')
+            } else if (res == 0) {
+                toast.add({
+                    title: 'Standard Kategorie kann nicht gelöscht werden',
+                    icon: 'i-heroicons-exclamation-triangle',
+                    color: 'error'
+                })
+            }
         }
     } catch (error) {
         console.log(error)

@@ -40,7 +40,9 @@
         <template #right>
             <div>
                 <h2>Cookie Kategorien</h2>
-                <UAccordion v-model="activeCategory" :items="accordionsItems">
+                <UAccordion ref="accordionRef" v-model="activeCategory" :items="accordionsItems" :ui="{
+                    leadingIcon: 'handle'
+                }">
                     <template #body="{ item }">
                         <EditConsentCategoryForm :id="item.id" @updated="() => {
                             activeCategory = undefined
@@ -72,9 +74,11 @@ import ConsentModalOptions from '@/components/Customizer/ConsentModalOptions.vue
 import EditConsentCategoryForm from '@/components/EditConsentCategoryForm.vue';
 import { useClient } from '@/composables/client';
 import { useConsentConfig } from '@/composables/useConsentConfig';
-// import { d26CookieConsentKey } from '@/plugins/CookieConsentVue';
 import type { AccordionItem } from '@nuxt/ui';
-import { computed, inject, onMounted, onUnmounted, ref } from 'vue'
+import { nextTick, onMounted, onUnmounted, ref, shallowRef, useTemplateRef } from 'vue'
+import { moveArrayElement, useSortable } from '@vueuse/integrations/useSortable'
+import { watchArray } from '@vueuse/core';
+
 
 const client = useClient()
 
@@ -83,11 +87,14 @@ const $consentConfig = useConsentConfig()
 const isAddingNewCategory = ref(false)
 const activeCategory = ref()
 
-const accordionsItems = computed<AccordionItem[]>(() => {
+const accordionsItems = shallowRef<AccordionItem[]>([])
+
+watchArray($consentConfig.consentCategories, () => {
     const categories = $consentConfig.consentCategories.value
-    return categories.map((cat) => {
+    accordionsItems.value = categories.map((cat) => {
         const item: AccordionItem = {
             label: cat.name,
+            icon: 'i-heroicons-bars-2',
             id: cat.id
         }
         console.log(item)
@@ -95,14 +102,37 @@ const accordionsItems = computed<AccordionItem[]>(() => {
     })
 })
 
+const accrodionRef = useTemplateRef<HTMLElement>('accordionRef')
+
+useSortable(accrodionRef, accordionsItems, {
+    animation: 300,
+    handle: '.handle',
+    onUpdate: (e: any) => {
+        moveArrayElement(accordionsItems, e.oldIndex, e.newIndex, e)
+        nextTick(() => {
+            updateCategoryOrder(accordionsItems.value.map(item => item.id))
+        })
+    }
+})
+
 async function loadCategories() {
     try {
         const res = await client.getConsentCategories()
+        console.log(res)
         $consentConfig.init({
             categories: res
         })
     } catch (err) {
         console.error(err)
+    }
+}
+
+async function updateCategoryOrder(order: number[]) {
+    try {
+        console.log(order)
+        await client.updateConsentCategoriesOrder(order)
+    } catch (error) {
+        console.error(error)
     }
 }
 
