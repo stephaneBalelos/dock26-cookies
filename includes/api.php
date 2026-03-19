@@ -24,6 +24,13 @@ class APIController extends WP_REST_Controller
 
     public function register_routes()
     {
+        register_rest_route($this->namespace, '/get-config', [
+            [
+                'methods' => WP_REST_Server::READABLE,
+                'callback' => [$this, 'get_consent_config'],
+                'permission_callback' => [$this, 'permissions_check']
+            ]
+        ]);
         register_rest_route($this->namespace, '/categories', [
             [
                 'methods' => WP_REST_Server::READABLE,
@@ -96,9 +103,7 @@ class APIController extends WP_REST_Controller
         return new WP_Error('rest_forbidden', 'You cannot access this resource.', ['status' => 401]);
     }
 
-
-
-    public function get_consent_services()
+    public static function get_consent_services()
     {
         $services = get_posts([
             'post_type' => 'd26cookies_consent_service',

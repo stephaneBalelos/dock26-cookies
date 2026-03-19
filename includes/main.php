@@ -39,6 +39,8 @@ class Main
         add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_assets']);
 
         add_action('rest_api_init', [\Dock26Cookies\Main::class, 'init_rest_api']);
+
+        add_filter('render_block_core/embed', [__CLASS__, 'render_block_or_prompt_consent'], 10, 2);
     }
 
     public static function register_consent_service_cpt()
@@ -95,8 +97,7 @@ class Main
         wp_enqueue_style('dock26_cookieconsent_css', plugins_url('../frontend/dist/assets/css/frontend.css', __FILE__), []);
 
         wp_localize_script('dock26_cookieconsent_js', 'dock26Cookies', [
-            'settings' => array(),
-            'categories' => self::get_categories(),
+            'config' => self::get_config(),
         ]);
     }
 
@@ -111,15 +112,38 @@ class Main
         \Dock26Cookies\Admin::init();
     }
 
-    public static function get_categories()
+    public static function render_block_or_prompt_consent($block_content, $block)
     {
-        $categories = get_terms([
-            'taxonomy' => 'd26cookies_consent_service_category',
-            'number' => 99,
-            'hide_empty' => false
-        ]);
 
-        return $categories;
+        $block_attrs = $block['attrs'];
+        return esc_html(json_encode($block_content));
+
+        // Handle Youtube
+        if ($block_attrs['providerNameSlug'] == 'youtube') {
+
+            $query = parse_url($block_attrs['url'], PHP_URL_QUERY);
+            $q = explode("=", $query);
+
+            // return json_encode($q);
+
+            return '<div 
+            class="' . $block_attrs['className'] . '"
+            data-service="' . $block_attrs['providerNameSlug'] . '"
+            data-id="' . $q[1] . '"
+            data-iframe-class="' . $block_attrs['className'] . '"
+            data-autoscale data-iframe-id="iframeId" data-iframe-loading="lazy" data-iframe-frameborder="0"></div>';
+        }
+
+        return $block_content;
+    }
+
+    public static function get_config()
+    {
+        $categories = APIController::get_consent_service_categories();
+        return [
+            'settings' => [],
+            'categories' => $categories
+        ];
     }
 
     public static function activate() {}

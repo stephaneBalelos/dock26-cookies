@@ -1,18 +1,14 @@
 import * as CookieConsent from "vanilla-cookieconsent";
 import "vanilla-cookieconsent/dist/cookieconsent.css";
+import "@orestbida/iframemanager/dist/iframemanager.css";
+import { type IframeManagerInstance } from "@orestbida/iframemanager";
+import type { ConsentCategory } from "../../types";
+import type { Category } from "vanilla-cookieconsent";
 
 /**
  * All config. options available here:
  * https://cookieconsent.orestbida.com/reference/configuration-reference.html
  */
-
-type Dock26CookieConsentCategories = {
-  id: string;
-  name: string;
-  description: string;
-  enabled: boolean;
-  readOnly: boolean;
-};
 
 type Dock26CookieConsentSettings = {
   [key: string]: any;
@@ -20,42 +16,98 @@ type Dock26CookieConsentSettings = {
 
 declare global {
   interface Window {
+    iframemanager: () => IframeManagerInstance;
     dock26Cookies: {
-      settings: Dock26CookieConsentSettings;
-      categories: Dock26CookieConsentCategories[];
+      config: {
+        settings: Dock26CookieConsentSettings;
+        categories: ConsentCategory[];
+      };
     };
     CookieConsent: typeof CookieConsent;
   }
 }
 
 window.CookieConsent = CookieConsent;
+const im = window.iframemanager();
+
+console.log(im);
 
 document.addEventListener("DOMContentLoaded", async () => {
   console.log(
     "Initializing Cookie Consent with categories:",
     window.dock26Cookies,
   );
-  if (window.dock26Cookies.categories.length === 0) {
+  if (window.dock26Cookies.config.categories.length === 0) {
     console.warn("No consent categories found.");
   }
 
-  const categories: CookieConsent.CookieConsentConfig["categories"] = {};
-  const sections: CookieConsent.Section[] = [];
-  const settings = window.dock26Cookies.settings;
+  im.run({
+    currLang: "de",
 
-  window.dock26Cookies.categories.forEach((category) => {
-    const categoryId = category.id.toString();
-    categories[categoryId] = {
-      enabled: category.enabled,
-      readOnly: category.readOnly,
-    };
-    sections.push({
-      title: category.name,
-      description: category.description,
-      linkedCategory:
-        category.enabled && category.readOnly ? undefined : categoryId,
-    });
+    services: {
+      youtube: {
+        embedUrl: "https://www.youtube-nocookie.com/embed/{data-id}",
+        thumbnailUrl: "https://i3.ytimg.com/vi/{data-id}/hqdefault.jpg",
+
+        iframe: {
+          allow:
+            "accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen;",
+        },
+
+        languages: {
+          de: {
+            loadBtn: "Accept",
+            notice:
+              'This content is hosted by a third party. By showing the external content you accept the <a rel="noreferrer noopener" href="https://www.youtube.com/t/terms" target="_blank">terms and conditions</a> of youtube.com.',
+            loadAllBtn: "Accept and Load",
+          },
+        },
+      },
+    },
   });
+
+  const categories = window.dock26Cookies.config.categories.reduce(
+    (acc, category) => {
+      acc[category.slug] = {
+        autoClear: {
+          cookies: [],
+          reloadPage: true,
+        },
+      };
+      return acc;
+    },
+    {} as Record<string, Category>,
+  );
+  categories["external_medias"] = {
+    services: {
+      youtube: {
+        label: "Youtube Embed",
+        onAccept: () => im.acceptService("youtube"),
+        onReject: () => im.rejectService("youtube"),
+      },
+      vimeo: {
+        label: "Vimeo Embed",
+        onAccept: () => im.acceptService("vimeo"),
+        onReject: () => im.rejectService("vimeo"),
+      },
+    },
+  };
+  const sections: CookieConsent.Section[] =
+    window.dock26Cookies.config.categories.map((cat) => {
+      return {
+        title: cat.name,
+        description: cat.description,
+        linkedCategory: cat.slug,
+      };
+    });
+
+  sections.push({
+    title: "External Medias",
+    description: "External",
+    linkedCategory: "external_medias",
+  });
+
+  const settings = window.dock26Cookies.config.settings;
 
   await CookieConsent.run({
     // root: "body",
@@ -72,6 +124,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       // sameSite: "Lax",
       // expiresAfterDays: 182,
     },
+
+    categories: categories,
 
     // https://cookieconsent.orestbida.com/reference/configuration-reference.html#guioptions
     guiOptions: {
@@ -98,7 +152,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     },
 
     onChange: ({ changedCategories, changedServices }) => {
-      handleConsentChange(changedCategories, changedServices);
+      console.log(changedCategories, changedServices);
     },
 
     onModalReady: ({ modalName }) => {
@@ -112,8 +166,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     onModalHide: ({ modalName }) => {
       console.log("hidden:", modalName);
     },
-
-    categories: categories,
 
     language: {
       default: "de",
@@ -159,36 +211,23 @@ document.addEventListener("DOMContentLoaded", async () => {
     },
   });
 
-  function handleConsentChange(
-    changedCategories: string[],
-    _changedServices: {
-      [key: string]: string[];
-    },
-  ) {
-    const cookieValue = window.CookieConsent.getCookie();
-    // Check for each changed categories if the Consent ist given or revoked
-    // If a consent has been removed, reload the page
-    let shouldReload = false;
-    changedCategories.forEach((category) => {
-      if (!cookieValue.categories.includes(category)) {
-        shouldReload = true;
-      }
-    });
-
-    if (shouldReload) {
-      window.location.reload();
-    }
-  }
-
   // Init Triggers Buttons
   const initTriggers = () => {
-    const button = document.getElementById("dock-26-cookies-trigger-cc");
-    if (!button) {
-      return;
+    const buttonConsent = document.getElementById("dock26-cookies-consent");
+    const buttonPreferences = document.getElementById(
+      "dock26-cookies-preferences",
+    );
+    if (buttonConsent) {
+      buttonConsent.addEventListener("click", () => {
+        CookieConsent.show(true);
+      });
     }
-    button.addEventListener("click", () => {
-      CookieConsent.showPreferences();
-    });
+
+    if (buttonPreferences) {
+      buttonPreferences.addEventListener("click", () => {
+        CookieConsent.showPreferences();
+      });
+    }
   };
 
   initTriggers();
