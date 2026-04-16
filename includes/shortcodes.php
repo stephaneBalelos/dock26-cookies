@@ -13,7 +13,7 @@ class Shortcode
 
     public static function register_shortcode()
     {
-        add_shortcode('dock26_cookies', [\Dock26Cookies\Shortcode::class, 'render']);
+        add_shortcode('dock26_iframe_content', [\Dock26Cookies\Shortcode::class, 'render']);
     }
 
     public static function render($atts)
@@ -21,7 +21,13 @@ class Shortcode
         // Enqueue necessary scripts and styles
         $atts = shortcode_atts(['id' => 0], $atts);
 
-        return '<div id="dock26-cookies-container" data-id="' . esc_attr($atts['id']) . '"></div>';
+        return '<div
+            data-service="youtube"
+            data-id="' . esc_attr($atts['id']) . '"
+            data-autoscale
+            data-iframe-loading="lazy"
+            data-iframe-frameborder="0">
+        </div>';
 
     }
 

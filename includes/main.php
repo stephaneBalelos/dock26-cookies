@@ -6,6 +6,8 @@ if (!defined('ABSPATH')) {
     exit; // Exit if accessed directly
 }
 
+require_once 'cookie-config.php';
+
 class Main
 {
     public static function install()
@@ -36,11 +38,14 @@ class Main
 
         self::init_admin();
 
+        \Dock26Cookies\Shortcode::init();
+
         add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_assets']);
 
         add_action('rest_api_init', [\Dock26Cookies\Main::class, 'init_rest_api']);
 
         add_filter('render_block_core/embed', [__CLASS__, 'render_block_or_prompt_consent'], 10, 2);
+
     }
 
     public static function register_consent_service_cpt()
@@ -96,8 +101,10 @@ class Main
         // Enqueue Styles
         wp_enqueue_style('dock26_cookieconsent_css', plugins_url('../frontend/dist/assets/css/frontend.css', __FILE__), []);
 
+        $Cookies = new CookieConfig([], []);
+
         wp_localize_script('dock26_cookieconsent_js', 'dock26Cookies', [
-            'config' => self::get_config(),
+            'config' => $Cookies->getConfig(),
         ]);
     }
 
