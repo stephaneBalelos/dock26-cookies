@@ -8,7 +8,6 @@ if (!defined('ABSPATH')) {
 
 class CookieConfig
 {
-
     private $settings = [
         'cookie_name' => 'd26Cookies',
         'privacy_btn' => [
@@ -53,6 +52,10 @@ class CookieConfig
         'marketing' => [
             'enabled' => false,
             'readOnly' => false
+        ],
+        'security' => [
+            'enabled' => false,
+            'readOnly' => false
         ]
     ];
 
@@ -76,6 +79,11 @@ class CookieConfig
             'title' => 'Marketing & Werbungen',
             'description' => 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.',
             'linkedCategory' => 'marketing'
+        ],
+        [
+            'title' => 'Security cookies',
+            'description' => 'Diese Cookies tragen zur Sicherheit der Website bei, indem sie bösartige Aktivitäten erkennen und verhindern. Sie helfen dabei, die Website vor Angriffen zu schützen und die Integrität der Benutzerdaten zu gewährleisten.',
+            'linkedCategory' => 'security'
         ]
     ];
 
