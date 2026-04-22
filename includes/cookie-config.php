@@ -10,6 +10,7 @@ class CookieConfig
 {
     private $settings = [
         'cookie_name' => 'd26Cookies',
+        'default_language' => 'de',
         'privacy_btn' => [
             'label' => 'Datenschutzerklärung',
             'url' => '#'
@@ -21,7 +22,7 @@ class CookieConfig
     ];
 
     private $consentModal = [
-        'title' => 'Wir Benutzen Cookies hier',
+        'title' => 'Wir Benutzen Cookies',
         'description' => "Auf dieser Website nutzen wir Cookies und vergleichbare Funktionen zur Verarbeitung von Endgeräteinformationen und personenbezogenen Daten (wie z.B. IP-Adressen oder Browserinformationen). Die Verarbeitung dient der Einbindung von Inhalten, externen Diensten und Elementen Dritter, der statistischen Analyse/Messung, personalisierten Werbung sowie der Einbindung sozialer Medien.",
         'acceptAllBtn' => "Alles akzeptieren",
         'acceptNecessaryBtn' => "Nur notwendige",
@@ -126,9 +127,9 @@ class CookieConfig
             'settings' => $this->settings,
             'categories' => $categories,
             'language' => [
-                'default' => 'de',
+                'default' => $this->settings['default_language'],
                 'translations' => [
-                    'de' => [
+                    $this->settings['default_language'] => [
                         'consentModal' => $this->consentModal,
                         'preferencesModal' => $preferencesConfig
                     ]

@@ -3,6 +3,8 @@ import { ref, computed, inject } from 'vue'
 import Navbar from '@/components/Navbar.vue';
 import Home from '@/pages/index.vue';
 import Settings from '@/pages/settings.vue';
+import type { CookieConfig } from '../../types';
+import { useConsentConfig } from './composables/useConsentConfig';
 
 const apiUrl = inject('apiUrl', '')
 const nonce = inject('nonce', '')
@@ -29,6 +31,16 @@ const currentView = computed(() => {
       return Home
   }
 })
+
+const config = inject('initialConfig', null) as CookieConfig | null
+
+if (!config) {
+  console.error('Initial config not provided')
+  throw new Error('Initial config not provided')
+}
+
+const $consentConfig = useConsentConfig()
+$consentConfig.init(config)
 </script>
 
 <template>

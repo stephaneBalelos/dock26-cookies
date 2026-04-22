@@ -2,8 +2,7 @@ import * as CookieConsent from "vanilla-cookieconsent";
 import "vanilla-cookieconsent/dist/cookieconsent.css";
 import "@orestbida/iframemanager/dist/iframemanager.css";
 import { type IframeManagerInstance } from "@orestbida/iframemanager";
-// import type { ConsentCategory } from "../../types";
-// import type { Category } from "vanilla-cookieconsent";
+import type { CookieConfig } from "../../types";
 
 /**
  * All config. options available here:
@@ -14,27 +13,8 @@ declare global {
   interface Window {
     iframemanager: () => IframeManagerInstance;
     dock26Cookies: {
-      config: {
-        categories: {
-          [category: string]: {
-            enabled?: boolean;
-            readOnly?: boolean;
-            autoClear?: CookieConsent.AutoClear;
-            services?: {
-              [service: string]: {
-                label: string;
-              };
-            };
-          };
-        };
-        language: {
-          default: string;
-          translations: {
-            [locale: string]: CookieConsent.Translation;
-          };
-        };
-      };
-    };
+      config: CookieConfig;
+    }
     CookieConsent: typeof CookieConsent;
   }
 }

@@ -1,16 +1,11 @@
 import { createGlobalState } from "@vueuse/core";
-import { ref, computed, inject, nextTick } from "vue";
-import type { ConsentCategory } from "../../../types";
+import { ref, inject, nextTick } from "vue";
+import type { ConsentCategory, CookieConfig } from "../../../types";
 import type {
   GuiOptions,
-  Category,
   CookieConsentConfig,
 } from "vanilla-cookieconsent";
 import { d26CookieConsentKey } from "@/plugins/CookieConsentVue";
-
-type UseConsentConfigInit = {
-  categories: ConsentCategory[];
-};
 
 export const useConsentConfig = createGlobalState(() => {
   const isLoading = ref(true);
@@ -18,70 +13,23 @@ export const useConsentConfig = createGlobalState(() => {
   const consentCategories = ref<ConsentCategory[]>([]);
   const guiOptions = ref<GuiOptions>({
     consentModal: {
-      layout: "bar",
-      position: "top left",
+      layout: "cloud",
+      position: "bottom center"
+    },
+    preferencesModal: {
+      layout: "box",
+      position: "left",
     },
   });
 
   const cookieConsent = inject(d26CookieConsentKey);
 
-  const config = computed<CookieConsentConfig | null>(() => {
-    const categories = consentCategories.value;
-    if (categories.length == 0) return null;
-    return {
-      categories: categories.reduce(
-        (acc, category) => {
-          acc[category.slug] = {
-            autoClear: {
-              cookies: [],
-              reloadPage: true,
-            },
-          };
-          return acc;
-        },
-        {} as Record<string, Category>,
-      ),
-      language: {
-        default: "en",
-        translations: {
-          en: {
-            consentModal: {
-              label: "Cookie Consent Label",
-              title: "Cookie Consent Title",
-              description: "Description",
-              acceptAllBtn: "Alles Akzeptieren",
-              acceptNecessaryBtn: "Nur notwendige",
-              showPreferencesBtn: "Preferenzen anpassen",
-              closeIconLabel: "Schließen",
-              revisionMessage: "revision",
-              footer: "footer",
-            },
-            preferencesModal: {
-              title: "Preferences Title",
-              acceptAllBtn: "Alles Akzeptieren",
-              acceptNecessaryBtn: "Nur notwendige",
-              savePreferencesBtn: "Speichern",
-              closeIconLabel: "Schließen",
-              serviceCounterLabel: "Service COunter Label",
-              sections: categories.map((cat) => {
-                return {
-                  title: cat.name,
-                  description: cat.description,
-                  linkedCategory: cat.slug,
-                };
-              }),
-            },
-          },
-        },
-      },
-      guiOptions: guiOptions.value,
-    };
-  });
+  const config = ref<CookieConsentConfig | null>(null);
 
-  function init(init: UseConsentConfigInit) {
-    consentCategories.value = init.categories;
+  function init(init: CookieConfig) {
+    console.log("init config", init);
+    config.value = init
     nextTick(() => {
-      console.log("nextTick");
       if (config.value && cookieConsent) {
         cookieConsent.run(config.value);
       }
@@ -96,6 +44,15 @@ export const useConsentConfig = createGlobalState(() => {
       cookieConsent.show(true);
     }
   }
+
+  function showPreferencesModal() {
+    if (cookieConsent && config.value) {
+      cookieConsent.getUserPreferences();
+      cookieConsent.reset();
+      cookieConsent.run(config.value);
+      cookieConsent.showPreferences();
+    }
+  }
   return {
     isLoading,
     config,
@@ -103,5 +60,6 @@ export const useConsentConfig = createGlobalState(() => {
     guiOptions,
     init,
     showConsentModal,
+    showPreferencesModal,
   };
 });

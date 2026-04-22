@@ -6,12 +6,13 @@ if (!defined('ABSPATH')) {
     exit; // Exit if accessed directly
 }
 
+use Dock26Cookies\CookieConfig;
+
 use WP_REST_Controller;
 use WP_Error;
 use WP_REST_Server;
 use WP_REST_Request;
 use WP_REST_Response;
-use WP_Tax_Query;
 use WP_Term;
 
 class APIController extends WP_REST_Controller
@@ -24,13 +25,6 @@ class APIController extends WP_REST_Controller
 
     public function register_routes()
     {
-        register_rest_route($this->namespace, '/get-config', [
-            [
-                'methods' => WP_REST_Server::READABLE,
-                'callback' => [$this, 'get_consent_config'],
-                'permission_callback' => [$this, 'permissions_check']
-            ]
-        ]);
         register_rest_route($this->namespace, '/categories', [
             [
                 'methods' => WP_REST_Server::READABLE,

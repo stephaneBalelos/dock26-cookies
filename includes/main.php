@@ -144,15 +144,6 @@ class Main
         return $block_content;
     }
 
-    public static function get_config()
-    {
-        $categories = APIController::get_consent_service_categories();
-        return [
-            'settings' => [],
-            'categories' => $categories
-        ];
-    }
-
     public static function activate() {}
 
     public static function deactivate()
