@@ -26,6 +26,10 @@ export function useClient() {
     return await res.json();
   }
 
+  async function updateConsentModalConfig(config: Record<string, any>) {
+    return jsonQuery(`${apiUrl}/update-consent-modal-config`, "PUT", { config });
+  }
+
   async function getConsentCategories(): Promise<ConsentCategory[]> {
     return jsonQuery(`${apiUrl}/categories`, "GET")
   }
@@ -59,6 +63,7 @@ export function useClient() {
   }
 
   return {
+    updateConsentModalConfig,
     getConsentCategories,
     updateConsentCategoriesOrder,
     createConsentCategory,

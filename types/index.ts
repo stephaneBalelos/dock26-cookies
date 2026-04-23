@@ -1,4 +1,14 @@
 export type CookieConfig = {
+  guiOptions?: {
+    consentModal: {
+      layout: "box" | "bar" | "cloud";
+      position: 'top left' | 'top center' | 'top right' | 'middle left' | 'middle center' | 'middle right' | 'bottom left' | 'bottom center' | 'bottom right';
+    };
+    preferencesModal: {
+      layout: "box" | "bar";
+      position: 'left' | 'right';
+    };
+  };
   categories: {
     [category: string]: {
       enabled?: boolean;

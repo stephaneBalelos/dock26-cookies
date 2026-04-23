@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-    "ignoreDeprecations": "6.0",
     "typeRoots": ["./node_modules/@types", "./types"],
     "target": "ES2022",
     "useDefineForClassFields": true,
@@ -16,8 +15,6 @@
     "verbatimModuleSyntax": true,
     "moduleDetection": "force",
     "noEmit": true,
-
-    "baseUrl": ".",
 
     /* Linting */
     "strict": true,

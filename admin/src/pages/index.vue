@@ -5,18 +5,11 @@
     }">
         <UPageBody class="mt-0">
             <div class="grid grid-cols-1 gap-4">
-                <div class="">
-                    <UPageCard v-if="$consentConfig.config.value" title="Einwilligungs Modal" description="Hier kannst du die Inhalte des Einwilligungs Modals anpassen.">
-                        <div class="flex flex-col">
-                            <div class="flex-1 mb-4">
-                                <ConsentModalForm :consentConfig="{ locale: 'de'}" @saved="(data) => console.log(data)" />
-                            </div>
-                            <UButton :icon="'i-heroicons-eye'" color="neutral" variant="outline"
-                                @click="() => $consentConfig.showConsentModal()">
-                                Einwiligung Modal anzeigen
-                            </UButton>
-                        </div>
-                    </UPageCard>
+                <div v-if="$consentConfig.config.value" class="">
+                    <ConsentModalForm v-if="$consentConfig.config.value.language.translations.de" :consentConfig="{
+                        locale: 'de',
+                        ...$consentConfig.config.value.language.translations.de.consentModal
+                    }" @saved="onUpdateConsentModalConfig" />
                 </div>
                 <div>
                     <UPageCard title="Einwilligung Popup"
@@ -26,7 +19,8 @@
                             <div class="flex-1 mb-4">
                                 dsa
                             </div>
-                            <UButton :icon="'i-heroicons-eye'" color="neutral" variant="outline" @click="() => $consentConfig.showPreferencesModal()">
+                            <UButton :icon="'i-heroicons-eye'" color="neutral" variant="outline"
+                                @click="() => $consentConfig.showPreferencesModal()">
                                 Präferenzen Modal anzeigen
                             </UButton>
                         </div>
@@ -41,9 +35,22 @@
 </template>
 
 <script setup lang="ts">
+import { useClient } from '@/composables/client';
 import { useConsentConfig } from '@/composables/useConsentConfig';
+import type { ConsentModalConfig } from '../../../types';
 
 const $consentConfig = useConsentConfig()
+
+const $client = useClient()
+
+async function onUpdateConsentModalConfig(config: ConsentModalConfig) {
+    try {
+        const updatedConfig = await $client.updateConsentModalConfig(config);
+        console.log('Updated consent modal config', updatedConfig);
+    } catch (error) {
+        console.error('Error updating consent modal config', error);
+    }
+}
 </script>
 
 <style scoped></style>

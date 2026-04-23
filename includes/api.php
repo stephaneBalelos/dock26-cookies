@@ -42,6 +42,13 @@ class APIController extends WP_REST_Controller
                 'permission_callback' => [$this, 'permissions_check']
             ]
         ]);
+        register_rest_route($this->namespace, '/update-consent-modal-config', [
+            [
+                'methods' => WP_REST_Server::EDITABLE,
+                'callback' => [$this, 'update_consent_modal_config'],
+                'permission_callback' => [$this, 'permissions_check']
+            ]
+        ]);
         register_rest_route($this->namespace, '/categories/(?P<id>[\d]+)', [
             [
                 'methods' => WP_REST_Server::READABLE,
@@ -95,6 +102,30 @@ class APIController extends WP_REST_Controller
         }
 
         return new WP_Error('rest_forbidden', 'You cannot access this resource.', ['status' => 401]);
+    }
+
+    public function update_consent_modal_config(WP_REST_Request $request)
+    {
+        $parameters = $request->get_json_params();
+
+        if (!isset($parameters['config']) || !is_array($parameters['config'])) {
+            return new WP_REST_Response(null, 422);
+        }
+
+        $config = [
+            ...$parameters['config']
+        ];
+
+        try {
+            $result = CookieConfig::saveConsenModalConfig($config);
+            if ($result) {
+                return new WP_REST_Response($result, 200);
+            } else {
+                return new WP_REST_Response(null, 500);
+            }
+        } catch (\Exception $e) {
+            return new WP_REST_Response($e->getMessage(), 500);
+        }
     }
 
     public static function get_consent_services()
@@ -186,7 +217,6 @@ class APIController extends WP_REST_Controller
         }
         return new WP_REST_Response(null, 422);
     }
-
 
     public static function delete_consent_service_category(WP_REST_Request $request)
     {

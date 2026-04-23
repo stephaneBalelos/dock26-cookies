@@ -1,37 +1,50 @@
 import { createGlobalState } from "@vueuse/core";
 import { ref, inject, nextTick } from "vue";
 import type { ConsentCategory, CookieConfig } from "../../../types";
-import type {
-  GuiOptions,
-  CookieConsentConfig,
-} from "vanilla-cookieconsent";
 import { d26CookieConsentKey } from "@/plugins/CookieConsentVue";
 
 export const useConsentConfig = createGlobalState(() => {
   const isLoading = ref(true);
 
+  const consentModalLayoutOptions = {
+    layout: {
+      base: [
+        { label: 'Box', value: 'box' },
+        { label: 'Bar', value: 'bar' },
+        { label: 'Cloud', value: 'cloud' },
+      ],
+      variant: [
+        { label: 'Wide', value: 'wide' },
+        { label: 'Inline', value: 'inline' },
+      ],
+    },
+    position: {
+      x: [
+        { label: 'Left', value: 'left' },
+        { label: 'Center', value: 'center' },
+        { label: 'Right', value: 'right' },
+      ],
+      y: [
+        { label: 'Top', value: 'top' },
+        { label: 'Middle', value: 'middle' },
+        { label: 'Bottom', value: 'bottom' },
+      ],
+    }
+  };
+
   const consentCategories = ref<ConsentCategory[]>([]);
-  const guiOptions = ref<GuiOptions>({
-    consentModal: {
-      layout: "cloud",
-      position: "bottom center"
-    },
-    preferencesModal: {
-      layout: "box",
-      position: "left",
-    },
-  });
 
   const cookieConsent = inject(d26CookieConsentKey);
 
-  const config = ref<CookieConsentConfig | null>(null);
+  const config = ref<CookieConfig | null>(null);
 
   function init(init: CookieConfig) {
-    console.log("init config", init);
     config.value = init
     nextTick(() => {
       if (config.value && cookieConsent) {
-        cookieConsent.run(config.value);
+        cookieConsent.run({
+          ...config.value
+        });
       }
     });
   }
@@ -57,9 +70,9 @@ export const useConsentConfig = createGlobalState(() => {
     isLoading,
     config,
     consentCategories,
-    guiOptions,
     init,
     showConsentModal,
     showPreferencesModal,
+    consentModalLayoutOptions
   };
 });
