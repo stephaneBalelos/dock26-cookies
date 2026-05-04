@@ -3,12 +3,11 @@
 namespace Dock26Cookies;
 
 if (!defined('ABSPATH')) {
-    exit; // Exit if accessed directly
+    exit;
 }
 
 class CookieConfig
 {
-
     private const OPTION_PREFIX = 'dock26_cookies_';
 
     private $settings = [
@@ -26,8 +25,8 @@ class CookieConfig
 
     private $guiOptions = [
         'consentModal' => [
-            'layout' => 'bar',
-            'position' => 'bottom'
+            'layout' => 'box',
+            'position' => 'middle center'
         ],
         'preferencesModal' => [
             'layout' => 'bar',
@@ -56,7 +55,7 @@ class CookieConfig
             'enabled' => true,
             'readOnly' => true,
         ],
-        "external_media" => [
+        'external_media' => [
             'enabled' => false,
             'readOnly' => false
         ],
@@ -74,7 +73,7 @@ class CookieConfig
         ]
     ];
 
-    private $prefrencesSections = [
+    private $preferencesSections = [
         [
             'title' => 'Strictly necessary cookies',
             'description' => 'Diese Cookies sind für das ordnungsgemäße Funktionieren meiner Website unerlässlich. Ohne diese Cookies würde die Website nicht ordnungsgemäß funktionieren.',
@@ -109,27 +108,28 @@ class CookieConfig
         ],
     ];
 
-
-    public function __construct($preferences, $categories)
+    public function __construct()
     {
-        // Init
         $this->initConsentModalConfig();
-
-        // Init Gui Settings
+        $this->initPreferenceModalConfig();
         $this->initGUISettings();
     }
 
-    public function getConfig()
+    public function getConfig(): array
     {
         $settings = $this->settings;
 
-        $consentConfig['footer'] = '
-            <a href="' . $settings['privacy_btn']['url'] . '" target="_blank">' . $settings['privacy_btn']['url'] . '</a>
-            <a href="' . $settings['imprint_btn']['url'] . '" target="_blank">' . $settings['imprint_btn']['url'] . '</a>';
+        $consentModalConfig = $this->consentModalConfig;
+        $consentModalConfig['footer'] = \sprintf(
+            '<a href="%s" target="_blank">%s</a> <a href="%s" target="_blank">%s</a>',
+            $settings['privacy_btn']['url'],
+            $settings['privacy_btn']['label'],
+            $settings['imprint_btn']['url'],
+            $settings['imprint_btn']['label']
+        );
 
         $preferencesConfig = $this->preferencesModal;
-        $preferencesConfig['sections'] = $this->prefrencesSections;
-
+        $preferencesConfig['sections'] = $this->preferencesSections;
 
         $categories = $this->cookieCategories;
         foreach ($categories as $key => $category) {
@@ -146,10 +146,10 @@ class CookieConfig
             'guiOptions' => $this->guiOptions,
             'categories' => $categories,
             'language' => [
-                'default' => $this->settings['default_language'],
+                'default' => $settings['default_language'],
                 'translations' => [
-                    $this->settings['default_language'] => [
-                        'consentModal' => $this->consentModalConfig,
+                    $settings['default_language'] => [
+                        'consentModal' => $consentModalConfig,
                         'preferencesModal' => $preferencesConfig
                     ]
                 ]
@@ -157,127 +157,131 @@ class CookieConfig
         ];
     }
 
-    private function initConsentModalConfig()
+    private static function validateRequiredString(array $config, string $key, string $message): void
     {
-        $savedConfig = $this->get_option('consent_modal_config');
-        if ($savedConfig) {
-            $this->consentModalConfig = [...$this->consentModalConfig, ...json_decode($savedConfig, true)];
+        if (empty($config[$key])) {
+            throw new \InvalidArgumentException($message);
         }
     }
 
-    public static function saveConsenModalConfig(array $config)
+    private function initConsentModalConfig(): void
     {
-        // Check and Validate Config
-        // Title
-        if (!isset($config['title']) || empty($config['title']) || !\strlen($config['title']) > 0) {
-            throw new \InvalidArgumentException('Der Titel des Consent Modals ist erforderlich.');
+        $saved = $this->get_option('consent_modal_config');
+        if ($saved) {
+            $this->consentModalConfig = array_merge($this->consentModalConfig, json_decode($saved, true));
         }
+    }
 
-        // Description
-        if (!isset($config['description']) || empty($config['description']) || !\strlen($config['description']) > 0) {
-            throw new \InvalidArgumentException('Die Beschreibung des Consent Modals ist erforderlich.');
-        }
+    public static function saveConsentModalConfig(array $config): bool
+    {
+        self::validateRequiredString($config, 'title', 'Der Titel des Consent Modals ist erforderlich.');
+        self::validateRequiredString($config, 'description', 'Die Beschreibung des Consent Modals ist erforderlich.');
+        self::validateRequiredString($config, 'acceptAllBtn', 'Die Bezeichnung des "Alles Akzeptieren" Buttons ist erforderlich.');
+        self::validateRequiredString($config, 'acceptNecessaryBtn', 'Die Bezeichnung des "Nur notwendige Akzeptieren" Buttons ist erforderlich.');
+        self::validateRequiredString($config, 'showPreferencesBtn', 'Die Bezeichnung des "Präferenzen verwalten" Buttons ist erforderlich.');
 
-        // Accept All Button
-        if (!isset($config['acceptAllBtn']) || empty($config['acceptAllBtn']) || !\strlen($config['acceptAllBtn']) > 0) {
-            throw new \InvalidArgumentException('Die Bezeichnung des "Alles Akzeptieren" Buttons ist erforderlich.');
-        }
-
-        // Reject All Button
-        if (!isset($config['acceptNecessaryBtn']) || empty($config['acceptNecessaryBtn']) || !\strlen($config['acceptNecessaryBtn']) > 0) {
-            throw new \InvalidArgumentException('Die Bezeichnung des "Nur notwendige Akzeptieren" Buttons ist erforderlich.');
-        }
-
-        // Show Preferences Button
-        if (!isset($config['showPreferencesBtn']) || empty($config['showPreferencesBtn']) || !\strlen($config['showPreferencesBtn']) > 0) {
-            throw new \InvalidArgumentException('Die Bezeichnung des "Präferenzen verwalten" Buttons ist erforderlich.');
-        }
-
-        // Layout
         if (isset($config['layout'])) {
-            if (!isset($config['layout']['base']) || !\in_array($config['layout']['base'], ['box', 'bar', 'cloud'])) {
+            if (!\in_array($config['layout']['base'] ?? null, ['box', 'bar', 'cloud'])) {
                 throw new \InvalidArgumentException('Das Layout Basis-Design ist ungültig. Erlaubte Werte sind: box, bar, cloud.');
             }
-
-            if (!isset($config['layout']['variant']) || !\in_array($config['layout']['variant'], ['wide', 'inline'])) {
+            if (!\in_array($config['layout']['variant'] ?? null, ['wide', 'inline'])) {
                 throw new \InvalidArgumentException('Das Layout Variant ist ungültig. Erlaubte Werte sind: wide, inline.');
             }
         }
 
-        // Position
         if (isset($config['position'])) {
-            if (!isset($config['position']['x']) || !\in_array($config['position']['x'], ['left', 'center', 'right'])) {
+            if (!\in_array($config['position']['x'] ?? null, ['left', 'center', 'right'])) {
                 throw new \InvalidArgumentException('Die Position X ist ungültig. Erlaubte Werte sind: left, center, right.');
             }
-            if (!isset($config['position']['y']) || !\in_array($config['position']['y'], ['top', 'middle', 'bottom'])) {
+            if (!\in_array($config['position']['y'] ?? null, ['top', 'middle', 'bottom'])) {
                 throw new \InvalidArgumentException('Die Position Y ist ungültig. Erlaubte Werte sind: top, middle, bottom.');
             }
         }
 
-        $config = [
+        update_option(self::OPTION_PREFIX . 'consent_modal_config', json_encode([
             'title' => sanitize_text_field($config['title']),
             'description' => sanitize_textarea_field($config['description']),
             'acceptAllBtn' => sanitize_text_field($config['acceptAllBtn']),
             'acceptNecessaryBtn' => sanitize_text_field($config['acceptNecessaryBtn']),
             'showPreferencesBtn' => sanitize_text_field($config['showPreferencesBtn']),
             'layout' => $config['layout'] ?? null,
-            'position' => $config['position'] ?? null
-        ];
-
-        // Save config
-        update_option(self::OPTION_PREFIX . 'consent_modal_config', json_encode($config));
+            'position' => $config['position'] ?? null,
+        ]));
 
         return true;
     }
 
-    private function initGUISettings()
+    private function initPreferenceModalConfig(): void
     {
-        $savedGuiSettings = $this->get_option('gui_settings');
-        if ($savedGuiSettings) {
-            $this->guiOptions = [...$this->guiOptions, ...json_decode($savedGuiSettings, true)];
+        $saved = $this->get_option('preference_modal_config');
+        if ($saved) {
+            $this->preferencesModal = array_merge($this->preferencesModal, json_decode($saved, true));
         }
     }
 
-    public static function saveGUISettings(array $settings)
+    public static function savePreferenceModalConfig(array $config): bool
     {
-        // Validate settings here if needed
+        self::validateRequiredString($config, 'title', 'Der Titel des Präferenzen Modals ist erforderlich.');
+        self::validateRequiredString($config, 'acceptAllBtn', 'Die Bezeichnung des "Alles Akzeptieren" Buttons ist erforderlich.');
+        self::validateRequiredString($config, 'acceptNecessaryBtn', 'Die Bezeichnung des "Nur notwendige Akzeptieren" Buttons ist erforderlich.');
+        self::validateRequiredString($config, 'savePreferencesBtn', 'Die Bezeichnung des "Präferenzen speichern" Buttons ist erforderlich.');
+        self::validateRequiredString($config, 'closeIconLabel', 'Die Bezeichnung des "Schließen" Icons ist erforderlich.');
+
+        update_option(self::OPTION_PREFIX . 'preference_modal_config', json_encode([
+            'title' => sanitize_text_field($config['title']),
+            'acceptAllBtn' => sanitize_text_field($config['acceptAllBtn']),
+            'acceptNecessaryBtn' => sanitize_text_field($config['acceptNecessaryBtn']),
+            'savePreferencesBtn' => sanitize_text_field($config['savePreferencesBtn']),
+            'closeIconLabel' => sanitize_text_field($config['closeIconLabel']),
+        ]));
+
+        return true;
+    }
+
+    private function initGUISettings(): void
+    {
+        $saved = $this->get_option('gui_settings');
+        if ($saved) {
+            $this->guiOptions = array_replace_recursive($this->guiOptions, json_decode($saved, true));
+        }
+    }
+
+    public static function saveGUISettings(array $settings): bool
+    {
         if (isset($settings['consentModal'])) {
-            if (isset($settings['consentModal']['layout']) && (!\in_array($settings['consentModal']['layout'], ['box', 'bar', 'cloud']))) {
+            if (isset($settings['consentModal']['layout']) && !\in_array($settings['consentModal']['layout'], ['box', 'bar', 'cloud'])) {
                 throw new \InvalidArgumentException('Das Layout Basis-Design des Consent Modals ist ungültig. Erlaubte Werte sind: box, bar, cloud.');
             }
-            if (isset($settings['consentModal']['position']) && (!\in_array($settings['consentModal']['position'], ['top left', 'top center', 'top right', 'middle left', 'middle center', 'middle right', 'bottom left', 'bottom center', 'bottom right', 'top', 'bottom']))) {
+            if (isset($settings['consentModal']['position']) && !\in_array($settings['consentModal']['position'], ['top left', 'top center', 'top right', 'middle left', 'middle center', 'middle right', 'bottom left', 'bottom center', 'bottom right', 'top', 'bottom'])) {
                 throw new \InvalidArgumentException('Die Position des Consent Modals ist ungültig. Erlaubte Werte sind: top left, top center, top right, middle left, middle center, middle right, bottom left, bottom center, bottom right.');
             }
         }
 
         if (isset($settings['preferencesModal'])) {
-            if (isset($settings['preferencesModal']['layout']) && (!\in_array($settings['preferencesModal']['layout'], ['box', 'bar']))) {
+            if (isset($settings['preferencesModal']['layout']) && !\in_array($settings['preferencesModal']['layout'], ['box', 'bar'])) {
                 throw new \InvalidArgumentException('Das Layout Basis-Design des Präferenzen Modals ist ungültig. Erlaubte Werte sind: box, bar.');
             }
-            if (isset($settings['preferencesModal']['position']) && (!\in_array($settings['preferencesModal']['position'], ['left', 'right']))) {
+            if (isset($settings['preferencesModal']['position']) && !\in_array($settings['preferencesModal']['position'], ['left', 'right'])) {
                 throw new \InvalidArgumentException('Die Position des Präferenzen Modals ist ungültig. Erlaubte Werte sind: left, right.');
             }
         }
 
-        $guiSettings = [
+        update_option(self::OPTION_PREFIX . 'gui_settings', json_encode([
             'consentModal' => [
                 'layout' => $settings['consentModal']['layout'] ?? null,
-                'position' => $settings['consentModal']['position'] ?? null
+                'position' => $settings['consentModal']['position'] ?? null,
             ],
             'preferencesModal' => [
                 'layout' => $settings['preferencesModal']['layout'] ?? null,
-                'position' => $settings['preferencesModal']['position'] ?? null
-            ]
-        ];
-
-        // Save settings
-        update_option(self::OPTION_PREFIX . 'gui_settings', json_encode($guiSettings));
+                'position' => $settings['preferencesModal']['position'] ?? null,
+            ],
+        ]));
 
         return true;
     }
 
-    private function get_option($option_name, $default = null)
+    private function get_option(string $option_name, $default = null)
     {
-        return get_option($this::OPTION_PREFIX . $option_name, $default);
+        return get_option(self::OPTION_PREFIX . $option_name, $default);
     }
 }

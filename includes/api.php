@@ -49,6 +49,14 @@ class APIController extends WP_REST_Controller
                 'permission_callback' => [$this, 'permissions_check']
             ]
         ]);
+
+        register_rest_route($this->namespace, '/update-preference-modal-config', [
+            [
+                'methods' => WP_REST_Server::EDITABLE,
+                'callback' => [$this, 'update_preference_modal_config'],
+                'permission_callback' => [$this, 'permissions_check']
+            ]
+        ]);
         register_rest_route($this->namespace, '/categories/(?P<id>[\d]+)', [
             [
                 'methods' => WP_REST_Server::READABLE,
@@ -117,7 +125,30 @@ class APIController extends WP_REST_Controller
         ];
 
         try {
-            $result = CookieConfig::saveConsenModalConfig($config);
+            $result = CookieConfig::saveConsentModalConfig($config);
+            if ($result) {
+                return new WP_REST_Response($result, 200);
+            } else {
+                return new WP_REST_Response(null, 500);
+            }
+        } catch (\Exception $e) {
+            return new WP_REST_Response($e->getMessage(), 500);
+        }
+    }
+    public function update_preference_modal_config(WP_REST_Request $request)
+    {
+        $parameters = $request->get_json_params();
+
+        if (!isset($parameters['config']) || !is_array($parameters['config'])) {
+            return new WP_REST_Response(null, 422);
+        }
+
+        $config = [
+            ...$parameters['config']
+        ];
+
+        try {
+            $result = CookieConfig::savePreferenceModalConfig($config);
             if ($result) {
                 return new WP_REST_Response($result, 200);
             } else {
