@@ -101,7 +101,7 @@ class Main
         // Enqueue Styles
         wp_enqueue_style('dock26_cookieconsent_css', plugins_url('../frontend/dist/assets/css/frontend.css', __FILE__), []);
 
-        $Cookies = new CookieConfig([], []);
+        $Cookies = new CookieConfig();
 
         wp_localize_script('dock26_cookieconsent_js', 'dock26Cookies', [
             'config' => $Cookies->getConfig(),

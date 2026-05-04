@@ -2,9 +2,12 @@ import { createGlobalState } from "@vueuse/core";
 import { ref, inject, nextTick } from "vue";
 import type { CookieConfig } from "../../../types";
 import { d26CookieConsentKey } from "@/plugins/CookieConsentVue";
+import { useClient } from "./client";
 
 export const useConsentConfig = createGlobalState(() => {
-  const isLoading = ref(true);
+
+  const client = useClient()
+  const isLoading = ref(false);
 
   const consentModalLayoutOptions = {
     layout: {
@@ -48,6 +51,19 @@ export const useConsentConfig = createGlobalState(() => {
     });
   }
 
+  async function reloadConfig() {
+    try {
+      isLoading.value = true
+      closeAllModal()
+      const c = await client.getConfig()
+      init(c)
+    } catch (error) {
+      console.log(error)
+    } finally {
+      isLoading.value = false
+    }
+  }
+
   function showConsentModal() {
     if (cookieConsent && config.value) {
       cookieConsent.hide();
@@ -65,10 +81,18 @@ export const useConsentConfig = createGlobalState(() => {
       cookieConsent.showPreferences();
     }
   }
+
+  function closeAllModal() {
+    if(cookieConsent && config.value) {
+      cookieConsent.hide()
+      cookieConsent.hidePreferences()
+    }
+  }
   return {
     isLoading,
     config,
     init,
+    reloadConfig,
     showConsentModal,
     showPreferencesModal,
     consentModalLayoutOptions

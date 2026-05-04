@@ -21,6 +21,14 @@ class APIController extends WP_REST_Controller
 
     public function register_routes()
     {
+        register_rest_route($this->namespace, '/config', [
+            [
+                'methods' => WP_REST_Server::READABLE,
+                'callback' => [$this, 'get_config'],
+                'permission_callback' => [$this, 'permissions_check']
+            ]
+        ]);
+
         register_rest_route($this->namespace, '/update-consent-modal-config', [
             [
                 'methods' => WP_REST_Server::EDITABLE,
@@ -57,6 +65,12 @@ class APIController extends WP_REST_Controller
         }
 
         return new WP_Error('rest_forbidden', 'You cannot access this resource.', ['status' => 401]);
+    }
+
+    public function get_config(): WP_REST_Response
+    {
+        $config = new CookieConfig();
+        return new WP_REST_Response($config->getConfig(), 200);
     }
 
     public function update_consent_modal_config(WP_REST_Request $request): WP_REST_Response

@@ -55,6 +55,8 @@ async function onUpdateConsentModalConfig(config: ConsentModalConfig) {
         console.log('Updated consent modal config', updatedConfig);
     } catch (error) {
         console.error('Error updating consent modal config', error);
+    } finally {
+        $consentConfig.reloadConfig()
     }
 }
 async function onUpdatePreferencesModalConfig(config: ConsentModalConfig) {
@@ -63,6 +65,8 @@ async function onUpdatePreferencesModalConfig(config: ConsentModalConfig) {
         console.log('Updated consent modal config', updatedConfig);
     } catch (error) {
         console.error('Error updating consent modal config', error);
+    } finally {
+        $consentConfig.reloadConfig()
     }
 }
 </script>

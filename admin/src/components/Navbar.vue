@@ -1,7 +1,15 @@
 <template>
     <UHeader>
         <template #title>
-            Logo
+            <div class="flex items-center gap-4">
+                <p class="text-lg font-bold">Logo</p>
+
+                <div v-if="$consentConfig.isLoading.value">
+                    <small>
+                        Loading
+                    </small>
+                </div>
+            </div>
         </template>
         <template #right>
             <div>
@@ -14,7 +22,10 @@
 </template>
 
 <script setup lang="ts">
+import { useConsentConfig } from '@/composables/useConsentConfig';
 
+
+const $consentConfig = useConsentConfig()
 </script>
 
 <style scoped></style>
