@@ -3,21 +3,17 @@
 namespace Dock26Cookies;
 
 if (!defined('ABSPATH')) {
-    exit; // Exit if accessed directly
+    exit;
 }
-
-use Dock26Cookies\CookieConfig;
 
 use WP_REST_Controller;
 use WP_Error;
 use WP_REST_Server;
 use WP_REST_Request;
 use WP_REST_Response;
-use WP_Term;
 
 class APIController extends WP_REST_Controller
 {
-    // Here initialize our namespace and resource name.
     public function __construct()
     {
         $this->namespace = '/dock26-cookies/v1';
@@ -25,23 +21,6 @@ class APIController extends WP_REST_Controller
 
     public function register_routes()
     {
-        register_rest_route($this->namespace, '/categories', [
-            [
-                'methods' => WP_REST_Server::READABLE,
-                'callback' => [$this, 'get_consent_service_categories'],
-                'permission_callback' => [$this, 'permissions_check']
-            ],
-            [
-                'methods' => WP_REST_Server::CREATABLE,
-                'callback' => [$this, 'create_consent_service_categories'],
-                'permission_callback' => [$this, 'permissions_check']
-            ],
-            [
-                'methods' => WP_REST_Server::EDITABLE,
-                'callback' => [$this, 'update_consent_category_order'],
-                'permission_callback' => [$this, 'permissions_check']
-            ]
-        ]);
         register_rest_route($this->namespace, '/update-consent-modal-config', [
             [
                 'methods' => WP_REST_Server::EDITABLE,
@@ -57,48 +36,16 @@ class APIController extends WP_REST_Controller
                 'permission_callback' => [$this, 'permissions_check']
             ]
         ]);
-        register_rest_route($this->namespace, '/categories/(?P<id>[\d]+)', [
-            [
-                'methods' => WP_REST_Server::READABLE,
-                'callback' => [$this, 'get_consent_service_category'],
-                'permission_callback' => [$this, 'permissions_check'],
-                'args' => [
-                    'id' => [
-                        'validate_callback' => function ($param, $request, $key) {
-                            return is_numeric($param);
-                        }
-                    ]
-                ]
-            ],
+
+        register_rest_route($this->namespace, '/update-gui-config', [
             [
                 'methods' => WP_REST_Server::EDITABLE,
-                'callback' => [$this, 'update_consent_service_category'],
-                'permission_callback' => [$this, 'permissions_check'],
-                'args' => [
-                    'id' => [
-                        'validate_callback' => function ($param, $request, $key) {
-                            return is_numeric($param);
-                        }
-                    ]
-                ]
-            ],
-            [
-                'methods' => WP_REST_Server::DELETABLE,
-                'callback' => [$this, 'delete_consent_service_category'],
-                'permission_callback' => [$this, 'permissions_check'],
-                'args' => [
-                    'id' => [
-                        'validate_callback' => function ($param, $request, $key) {
-                            return is_numeric($param);
-                        }
-                    ]
-                ]
-            ],
-
+                'callback' => [$this, 'update_gui_config'],
+                'permission_callback' => [$this, 'permissions_check']
+            ]
         ]);
     }
 
-    // Check permissions
     public function permissions_check()
     {
         if (is_user_logged_in() && current_user_can('manage_options')) {
@@ -112,153 +59,36 @@ class APIController extends WP_REST_Controller
         return new WP_Error('rest_forbidden', 'You cannot access this resource.', ['status' => 401]);
     }
 
-    public function update_consent_modal_config(WP_REST_Request $request)
+    public function update_consent_modal_config(WP_REST_Request $request): WP_REST_Response
+    {
+        return $this->handle_config_update($request, [CookieConfig::class, 'saveConsentModalConfig']);
+    }
+
+    public function update_preference_modal_config(WP_REST_Request $request): WP_REST_Response
+    {
+        return $this->handle_config_update($request, [CookieConfig::class, 'savePreferenceModalConfig']);
+    }
+
+    public function update_gui_config(WP_REST_Request $request): WP_REST_Response
+    {
+        return $this->handle_config_update($request, [CookieConfig::class, 'saveGUISettings']);
+    }
+
+    private function handle_config_update(WP_REST_Request $request, callable $save_fn): WP_REST_Response
     {
         $parameters = $request->get_json_params();
 
-        if (!isset($parameters['config']) || !is_array($parameters['config'])) {
+        if (!isset($parameters['config']) || !\is_array($parameters['config'])) {
             return new WP_REST_Response(null, 422);
         }
 
-        $config = [
-            ...$parameters['config']
-        ];
-
         try {
-            $result = CookieConfig::saveConsentModalConfig($config);
-            if ($result) {
-                return new WP_REST_Response($result, 200);
-            } else {
-                return new WP_REST_Response(null, 500);
-            }
+            $result = $save_fn($parameters['config']);
+            return new WP_REST_Response($result, 200);
+        } catch (\InvalidArgumentException $e) {
+            return new WP_REST_Response($e->getMessage(), 422);
         } catch (\Exception $e) {
             return new WP_REST_Response($e->getMessage(), 500);
         }
-    }
-    public function update_preference_modal_config(WP_REST_Request $request)
-    {
-        $parameters = $request->get_json_params();
-
-        if (!isset($parameters['config']) || !is_array($parameters['config'])) {
-            return new WP_REST_Response(null, 422);
-        }
-
-        $config = [
-            ...$parameters['config']
-        ];
-
-        try {
-            $result = CookieConfig::savePreferenceModalConfig($config);
-            if ($result) {
-                return new WP_REST_Response($result, 200);
-            } else {
-                return new WP_REST_Response(null, 500);
-            }
-        } catch (\Exception $e) {
-            return new WP_REST_Response($e->getMessage(), 500);
-        }
-    }
-
-    public static function get_consent_services()
-    {
-        $services = get_posts([
-            'post_type' => 'd26cookies_consent_service',
-            'numberposts' => -1
-        ]);
-        return rest_ensure_response($services);
-    }
-
-    public static function get_consent_service_categories()
-    {
-        $categories = get_terms([
-            'taxonomy' => 'd26cookies_consent_service_cat',
-            'hide_empty' => false,
-            'meta_key' => 'consent_category_sort',
-            'orderby' => 'consent_category_sort'
-        ]);
-
-        return array_map(function (WP_Term $item) {
-            return [
-                'id' => $item->term_id,
-                'name' => $item->name,
-                'description' => $item->description,
-                'slug' => $item->slug,
-                'order' => get_term_meta($item->term_id, 'consent_category_sort', true)
-            ];
-        }, $categories);
-    }
-
-    public static function update_consent_category_order(WP_REST_Request $request)
-    {
-        $parameters = $request->get_json_params();
-        if (isset($parameters['categories_sort']) && is_array($parameters['categories_sort'])) {
-            foreach ($parameters['categories_sort'] as $key => $term_id) {
-                $res = update_term_meta($term_id, 'consent_category_sort', $key);
-            }
-            return new WP_REST_Response([], 200);
-        } else {
-            return new WP_REST_Response(null, 422);
-        }
-    }
-    public static function create_consent_service_categories(WP_REST_Request $request)
-    {
-        $parameters = $request->get_json_params();
-
-        if (isset($parameters['category_name'])) {
-            $result = wp_insert_term($parameters['category_name'], 'd26cookies_consent_service_cat', []);
-
-            // Set Order
-            $categories = get_terms([
-                'taxonomy' => 'd26cookies_consent_service_cat',
-                'hide_empty' => false,
-            ]);
-
-            update_term_meta($result['term_id'], 'consent_category_sort', count($categories));
-
-            return new WP_REST_Response($result, 200);
-        }
-
-        return new WP_REST_Response(null, 422);
-    }
-
-    public static function get_consent_service_category(WP_REST_Request $request)
-    {
-        $parameters = $request->get_url_params();
-
-        $result = get_term($parameters['id'], 'd26cookies_consent_service_cat', ARRAY_A);
-
-        if ($result) {
-            return new WP_REST_Response($result, 200);
-        }
-        return new WP_REST_Response(null, 422);
-    }
-
-    public static function update_consent_service_category(WP_REST_Request $request)
-    {
-        $parameters = $request->get_url_params();
-        $data = $request->get_json_params();
-
-        $result = wp_update_term($parameters['id'], 'd26cookies_consent_service_cat', [
-            'name' => $data['category_name'],
-            'description' => $data['category_description']
-        ]);
-
-        if ($result) {
-            return new WP_REST_Response($result, 200);
-        }
-        return new WP_REST_Response(null, 422);
-    }
-
-    public static function delete_consent_service_category(WP_REST_Request $request)
-    {
-        $parameters = $request->get_url_params();
-
-        $result = wp_delete_term($parameters['id'], 'd26cookies_consent_service_cat');
-
-        if ($result == true) {
-            return new WP_REST_Response($result, 200);
-        }
-
-        return new WP_REST_Response($result, 422);
     }
 }

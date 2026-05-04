@@ -29,16 +29,18 @@
                             <USelect v-model="form.consentModal.layout" :items="consentLayoutOptions" class="w-full" />
                         </UFormField>
                         <UFormField label="Position" name="consentModal.position">
-                            <USelect v-model="form.consentModal.position" :items="consentPositionOptions" class="w-full" />
+                            <USelect v-model="form.consentModal.position" :items="consentPositionOptions"
+                                class="w-full" />
                         </UFormField>
                     </div>
                     <div class="flex-1 space-y-4 mb-4">
                         <p class="text-lg font-bold">Preferenz Modal</p>
-                        <UFormField label="Layout" name="consentModal.layout">
+                        <UFormField label="Layout" name="preferencesModal.layout">
                             <USelect v-model="form.preferencesModal.layout" :items="prefLayoutOptions" class="w-full" />
                         </UFormField>
-                        <UFormField label="Position" name="consentModal.position">
-                            <USelect v-model="form.preferencesModal.position" :items="prefPositionsOptions" class="w-full" :disabled="prefPositionsOptions.length == 0" />
+                        <UFormField label="Position" name="preferencesModal.position">
+                            <USelect v-model="form.preferencesModal.position" :items="prefPositionsOptions"
+                                class="w-full" :disabled="form.preferencesModal.layout == 'box'" />
                         </UFormField>
                     </div>
                 </div>
@@ -58,9 +60,8 @@
 import { computed } from 'vue';
 import type { CookieConfig } from '../../../../types';
 import z from 'zod';
-import type { FormSubmitEvent } from '@nuxt/ui';
 import { useConsentConfig } from '@/composables/useConsentConfig';
-import type { ConsentModalLayout, ConsentModalPosition, PreferencesModalLayout, PreferencesModalPosition } from 'vanilla-cookieconsent';
+import type { ConsentModalLayout, ConsentModalPosition, GuiOptions, PreferencesModalLayout, PreferencesModalPosition } from 'vanilla-cookieconsent';
 
 type Props = {
     options: CookieConfig['guiOptions']
@@ -69,6 +70,10 @@ type Props = {
 const props = defineProps<Props>()
 
 const $consentConfig = useConsentConfig()
+
+const $emits = defineEmits<{
+    (event: 'saved', config: GuiOptions): void
+}>()
 
 
 const consentLayoutOptions: ConsentModalLayout[] = [
@@ -107,11 +112,7 @@ const prefLayoutOptions: PreferencesModalLayout[] = [
 ]
 
 const prefPositionsOptions = computed(() => {
-    if(form.value?.preferencesModal.layout == 'bar') {
-        return ['right', 'left'] as PreferencesModalPosition[]
-    } else {
-        return [] as PreferencesModalPosition[]
-    }
+    return ['right', 'left'] as PreferencesModalPosition[]
 })
 
 const schema = computed(() => {
@@ -120,14 +121,12 @@ const schema = computed(() => {
             layout: z.enum([...consentLayoutOptions]),
             position: z.enum([...consentPositionOptions.value]),
         }),
-        preferenceModal: z.object({
+        preferencesModal: z.object({
             layout: z.enum([...prefLayoutOptions]),
             position: z.enum([...prefPositionsOptions.value]),
         })
     })
 })
-
-type Form = z.infer<typeof schema.value>
 
 
 const form = computed({
@@ -139,14 +138,35 @@ const form = computed({
                 $consentConfig.config.value.guiOptions.consentModal.layout = newValue?.consentModal.layout ?? 'box'
                 $consentConfig.config.value.guiOptions.consentModal.position = newValue?.consentModal.position ?? 'bottom center'
 
+                $consentConfig.config.value.guiOptions.preferencesModal.layout = newValue?.preferencesModal.layout ?? 'box'
+                $consentConfig.config.value.guiOptions.preferencesModal.position = newValue?.preferencesModal.position ?? 'left'
+
             }
         }
     }
 })
 
 
-function onSubmit($event: FormSubmitEvent<Form>) {
-    console.log($event)
+function onSubmit() {
+    const guiConfig = $consentConfig.config.value?.guiOptions
+    console.log(guiConfig)
+
+    try {
+        const parsed = schema.value.parse(guiConfig)
+        console.log(parsed)
+        $emits('saved', {
+            consentModal: {
+                layout: parsed.consentModal.layout,
+                position: parsed.consentModal.position
+            },
+            preferencesModal: {
+                layout: parsed.preferencesModal.layout,
+                position: parsed.preferencesModal.position
+            }
+        })
+    } catch (error) {
+        console.log(error)
+    }
 }
 </script>
 

@@ -65,6 +65,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   const translations = window.dock26Cookies.config.language.translations;
+  const guiOptions = window.dock26Cookies.config.guiOptions
 
   await CookieConsent.run({
     // root: "body",
@@ -87,19 +88,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     },
 
     // https://cookieconsent.orestbida.com/reference/configuration-reference.html#guioptions
-    guiOptions: {
-      consentModal: {
-        layout: "cloud inline",
-        position: "bottom center",
-        equalWeightButtons: true,
-        flipButtons: false,
-      },
-      preferencesModal: {
-        layout: "box",
-        equalWeightButtons: true,
-        flipButtons: false,
-      },
-    },
+    guiOptions: guiOptions,
 
     language: {
       default: "de",
