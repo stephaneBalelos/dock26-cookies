@@ -1,6 +1,6 @@
 import { createGlobalState } from "@vueuse/core";
 import { ref, inject, nextTick } from "vue";
-import type { ConsentCategory, CookieConfig } from "../../../types";
+import type { CookieConfig } from "../../../types";
 import { d26CookieConsentKey } from "@/plugins/CookieConsentVue";
 
 export const useConsentConfig = createGlobalState(() => {
@@ -32,7 +32,6 @@ export const useConsentConfig = createGlobalState(() => {
     }
   };
 
-  const consentCategories = ref<ConsentCategory[]>([]);
 
   const cookieConsent = inject(d26CookieConsentKey);
 
@@ -69,7 +68,6 @@ export const useConsentConfig = createGlobalState(() => {
   return {
     isLoading,
     config,
-    consentCategories,
     init,
     showConsentModal,
     showPreferencesModal,

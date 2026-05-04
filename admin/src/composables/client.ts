@@ -1,5 +1,4 @@
 import { computed, inject } from "vue";
-import type { ConsentCategory } from "../../../types"
 
 
 export function useClient() {
@@ -31,7 +30,7 @@ export function useClient() {
   }
 
   async function updatePreferencesModalConfig(config: Record<string, any>) {
-    return jsonQuery(`${apiUrl}//update-preference-modal-config`, "PUT", { config });
+    return jsonQuery(`${apiUrl}/update-preference-modal-config`, "PUT", { config });
   }
 
   async function updateGuiOptions(config: Record<string, any>) {

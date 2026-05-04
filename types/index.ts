@@ -38,9 +38,11 @@ export type ConsentModalConfig = {
   showPreferencesBtn?: string;
 };
 
-export type ConsentCategory = {
-  id: number;
-  slug: string;
-  name: string;
-  description: string;
+export type PreferencesModalConfig = {
+  locale: "de" | "en";
+  title?: string;
+  acceptAllBtn?: string;
+  acceptNecessaryBtn?: string;
+  savePreferencesBtn?: string;
+  closeIconLabel?: string;
 };

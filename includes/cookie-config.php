@@ -180,32 +180,12 @@ class CookieConfig
         self::validateRequiredString($config, 'acceptNecessaryBtn', 'Die Bezeichnung des "Nur notwendige Akzeptieren" Buttons ist erforderlich.');
         self::validateRequiredString($config, 'showPreferencesBtn', 'Die Bezeichnung des "Präferenzen verwalten" Buttons ist erforderlich.');
 
-        if (isset($config['layout'])) {
-            if (!\in_array($config['layout']['base'] ?? null, ['box', 'bar', 'cloud'])) {
-                throw new \InvalidArgumentException('Das Layout Basis-Design ist ungültig. Erlaubte Werte sind: box, bar, cloud.');
-            }
-            if (!\in_array($config['layout']['variant'] ?? null, ['wide', 'inline'])) {
-                throw new \InvalidArgumentException('Das Layout Variant ist ungültig. Erlaubte Werte sind: wide, inline.');
-            }
-        }
-
-        if (isset($config['position'])) {
-            if (!\in_array($config['position']['x'] ?? null, ['left', 'center', 'right'])) {
-                throw new \InvalidArgumentException('Die Position X ist ungültig. Erlaubte Werte sind: left, center, right.');
-            }
-            if (!\in_array($config['position']['y'] ?? null, ['top', 'middle', 'bottom'])) {
-                throw new \InvalidArgumentException('Die Position Y ist ungültig. Erlaubte Werte sind: top, middle, bottom.');
-            }
-        }
-
         update_option(self::OPTION_PREFIX . 'consent_modal_config', json_encode([
             'title' => sanitize_text_field($config['title']),
             'description' => sanitize_textarea_field($config['description']),
             'acceptAllBtn' => sanitize_text_field($config['acceptAllBtn']),
             'acceptNecessaryBtn' => sanitize_text_field($config['acceptNecessaryBtn']),
             'showPreferencesBtn' => sanitize_text_field($config['showPreferencesBtn']),
-            'layout' => $config['layout'] ?? null,
-            'position' => $config['position'] ?? null,
         ]));
 
         return true;
