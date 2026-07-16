@@ -106,6 +106,10 @@ class CookieConfig
             'category' => 'external_media',
             'label' => 'YouTube',
         ],
+        'googlemaps' => [
+            'category' => 'external_media',
+            'label' => 'Google Maps',
+        ],
     ];
 
     public function __construct()

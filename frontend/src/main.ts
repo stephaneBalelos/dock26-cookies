@@ -14,7 +14,7 @@ declare global {
     iframemanager: () => IframeManagerInstance;
     dock26Cookies: {
       config: CookieConfig;
-    }
+    };
     CookieConsent: typeof CookieConsent;
   }
 }
@@ -34,7 +34,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (eventSource.type === "click") {
         console.log("Services changed via click:", changedServices);
         const servicesToAccept = [
-          ...CookieConsent.getUserPreferences().acceptedServices["external_media"] || [],
+          ...(CookieConsent.getUserPreferences().acceptedServices[
+            "external_media"
+          ] || []),
           ...changedServices,
         ];
 
@@ -61,11 +63,26 @@ document.addEventListener("DOMContentLoaded", async () => {
           },
         },
       },
+      googlemaps: {
+        embedUrl: "https://www.google.com/maps/embed?pb={data-id}",
+        iframe: {
+          allow: "picture-in-picture; fullscreen;",
+        },
+
+        languages: {
+          de: {
+            notice:
+              'This content is hosted by a third party. By showing the external content you accept the <a rel="noreferrer noopener" href="https://cloud.google.com/maps-platform/terms" target="_blank">terms and conditions</a> of Google Maps.',
+            loadBtn: "Load map",
+            loadAllBtn: "Don't ask again",
+          },
+        },
+      },
     },
   });
 
   const translations = window.dock26Cookies.config.language.translations;
-  const guiOptions = window.dock26Cookies.config.guiOptions
+  const guiOptions = window.dock26Cookies.config.guiOptions;
 
   await CookieConsent.run({
     // root: "body",
@@ -104,7 +121,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     },
 
     onChange: ({ cookie, changedServices, changedCategories }) => {
-      console.log("Consent changed:", cookie, changedServices, changedCategories);
+      console.log(
+        "Consent changed:",
+        cookie,
+        changedServices,
+        changedCategories,
+      );
       updateIframeAcceptance(cookie, changedServices);
     },
 

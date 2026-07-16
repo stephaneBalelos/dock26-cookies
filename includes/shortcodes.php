@@ -18,12 +18,13 @@ class Shortcode
 
     public static function render($atts)
     {
-        // Enqueue necessary scripts and styles
-        $atts = shortcode_atts(['id' => 0], $atts);
+        $atts = shortcode_atts(['id' => 0, 'service' => 'youtube', 'thumbnail' => ''], $atts, 'dock26_iframe_content');
+
 
         return '<div
-            data-service="youtube"
+            data-service="'. $atts['service'] .'"
             data-id="' . esc_attr($atts['id']) . '"
+            data-thumbnail="' . esc_attr($atts['thumbnail']) . '"
             data-autoscale
             data-iframe-loading="lazy"
             data-iframe-frameborder="0">
