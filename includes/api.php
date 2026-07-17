@@ -16,7 +16,7 @@ class APIController extends WP_REST_Controller
 {
     public function __construct()
     {
-        $this->namespace = '/dock26-cookies/v1';
+        $this->namespace = 'dock26-cookies/v1';
     }
 
     public function register_routes()
@@ -115,7 +115,9 @@ class APIController extends WP_REST_Controller
         } catch (\InvalidArgumentException $e) {
             return new WP_REST_Response($e->getMessage(), 422);
         } catch (\Exception $e) {
-            return new WP_REST_Response($e->getMessage(), 500);
+            // Don't leak internals to the client; the detail goes to the log.
+            error_log('[dock26-cookies] Config update failed: ' . $e->getMessage());
+            return new WP_REST_Response('Interner Fehler beim Speichern der Einstellungen.', 500);
         }
     }
 }

@@ -1,8 +1,8 @@
 import "./style.css";
+import "vanilla-cookieconsent/dist/cookieconsent.css";
 import { createApp } from "vue";
 import App from "./App.vue";
 import ui from "@nuxt/ui/vue-plugin";
-import { CookieConsentPlugin } from "./plugins/CookieConsentVue";
 import type { CookieConfig, CustomStyles } from "../../types";
 
 // declare the global window interface extension for TypeScript
@@ -25,8 +25,6 @@ app.use(ui, {
     prefix: "tw",
   },
 });
-console.log("Initial config from server:", window.dock26CookiesAdmin?.config);
-app.use(CookieConsentPlugin, {});
 app.provide("apiUrl", window.dock26CookiesAdmin?.apiUrl || "");
 app.provide("nonce", window.dock26CookiesAdmin?.nonce || "");
 app.provide("initialConfig", window.dock26CookiesAdmin?.config || null);

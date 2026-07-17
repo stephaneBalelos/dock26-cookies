@@ -2,7 +2,7 @@
     <UHeader>
         <template #title>
             <div class="flex items-center gap-4">
-                <p class="text-lg font-bold">Logo</p>
+                <p class="text-lg font-bold">Dock26 Cookies</p>
 
                 <div v-if="$consentConfig.isLoading.value">
                     <small>

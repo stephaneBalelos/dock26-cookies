@@ -27,23 +27,35 @@ const $consentConfig = useConsentConfig()
 
 const $client = useClient()
 
+const toast = useToast()
+
 const initialCustomStyles = inject('initialCustomStyles', null) as CustomStyles | null
+
+function notifyError(error: unknown) {
+    toast.add({
+        title: 'Speichern fehlgeschlagen',
+        description: error instanceof Error ? error.message : String(error),
+        icon: 'i-heroicons-exclamation-triangle',
+        color: 'error'
+    })
+}
 
 async function onUpdateGuiOptions(data: GuiOptions) {
     try {
-        const updatedConfig = await $client.updateGuiOptions(data);
-        console.log('Updated consent modal config', updatedConfig);
+        await $client.updateGuiOptions(data);
+        toast.add({ title: 'GUI-Optionen gespeichert', color: 'success' })
+        await $consentConfig.reloadConfig()
     } catch (error) {
-        console.error('Error updating consent modal config', error);
+        notifyError(error)
     }
 }
 
 async function onUpdateCustomStyles(data: CustomStyles) {
     try {
-        const updatedStyles = await $client.updateCustomStyles(data);
-        console.log('Updated custom styles', updatedStyles);
+        await $client.updateCustomStyles(data);
+        toast.add({ title: 'Benutzerdefinierte Stile gespeichert', color: 'success' })
     } catch (error) {
-        console.error('Error updating custom styles', error);
+        notifyError(error)
     }
 }
 </script>

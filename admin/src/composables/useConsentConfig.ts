@@ -1,51 +1,21 @@
 import { createGlobalState } from "@vueuse/core";
-import { ref, inject, nextTick } from "vue";
+import { ref, nextTick } from "vue";
+import * as cookieConsent from "vanilla-cookieconsent";
 import type { CookieConfig } from "../../../types";
-import { d26CookieConsentKey } from "@/plugins/CookieConsentVue";
 import { useClient } from "./client";
 
 export const useConsentConfig = createGlobalState(() => {
-
-  const client = useClient()
+  const client = useClient();
   const isLoading = ref(false);
-
-  const consentModalLayoutOptions = {
-    layout: {
-      base: [
-        { label: 'Box', value: 'box' },
-        { label: 'Bar', value: 'bar' },
-        { label: 'Cloud', value: 'cloud' },
-      ],
-      variant: [
-        { label: 'Wide', value: 'wide' },
-        { label: 'Inline', value: 'inline' },
-      ],
-    },
-    position: {
-      x: [
-        { label: 'Left', value: 'left' },
-        { label: 'Center', value: 'center' },
-        { label: 'Right', value: 'right' },
-      ],
-      y: [
-        { label: 'Top', value: 'top' },
-        { label: 'Middle', value: 'middle' },
-        { label: 'Bottom', value: 'bottom' },
-      ],
-    }
-  };
-
-
-  const cookieConsent = inject(d26CookieConsentKey);
 
   const config = ref<CookieConfig | null>(null);
 
-  function init(init: CookieConfig) {
-    config.value = init
+  function init(initial: CookieConfig) {
+    config.value = initial;
     nextTick(() => {
-      if (config.value && cookieConsent) {
+      if (config.value) {
         cookieConsent.run({
-          ...config.value
+          ...config.value,
         });
       }
     });
@@ -53,19 +23,19 @@ export const useConsentConfig = createGlobalState(() => {
 
   async function reloadConfig() {
     try {
-      isLoading.value = true
-      closeAllModal()
-      const c = await client.getConfig()
-      init(c)
+      isLoading.value = true;
+      closeAllModal();
+      const c = await client.getConfig();
+      init(c);
     } catch (error) {
-      console.log(error)
+      console.error("Fehler beim Neuladen der Konfiguration", error);
     } finally {
-      isLoading.value = false
+      isLoading.value = false;
     }
   }
 
   function showConsentModal() {
-    if (cookieConsent && config.value) {
+    if (config.value) {
       cookieConsent.hide();
       cookieConsent.reset();
       cookieConsent.run(config.value);
@@ -74,8 +44,7 @@ export const useConsentConfig = createGlobalState(() => {
   }
 
   function showPreferencesModal() {
-    if (cookieConsent && config.value) {
-      cookieConsent.getUserPreferences();
+    if (config.value) {
       cookieConsent.reset();
       cookieConsent.run(config.value);
       cookieConsent.showPreferences();
@@ -83,11 +52,10 @@ export const useConsentConfig = createGlobalState(() => {
   }
 
   function closeAllModal() {
-    if(cookieConsent && config.value) {
-      cookieConsent.hide()
-      cookieConsent.hidePreferences()
-    }
+    cookieConsent.hide();
+    cookieConsent.hidePreferences();
   }
+
   return {
     isLoading,
     config,
@@ -95,6 +63,5 @@ export const useConsentConfig = createGlobalState(() => {
     reloadConfig,
     showConsentModal,
     showPreferencesModal,
-    consentModalLayoutOptions
   };
 });

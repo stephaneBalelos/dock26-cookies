@@ -14,12 +14,6 @@ importers:
       '@vueuse/core':
         specifier: ^14.2.1
         version: 14.2.1(vue@3.5.29(typescript@5.9.3))
-      '@vueuse/integrations':
-        specifier: ^14.2.1
-        version: 14.2.1(fuse.js@7.1.0)(sortablejs@1.15.7)(vue@3.5.29(typescript@5.9.3))
-      sortablejs:
-        specifier: ^1.15.7
-        version: 1.15.7
       tailwindcss:
         specifier: ^4.2.1
         version: 4.2.1
@@ -36,9 +30,6 @@ importers:
       '@types/node':
         specifier: ^24.10.13
         version: 24.10.14
-      '@types/sortablejs':
-        specifier: ^1.15.9
-        version: 1.15.9
       '@vitejs/plugin-vue':
         specifier: ^6.0.4
         version: 6.0.4(vite@7.3.1(@types/node@24.10.14)(jiti@2.6.1)(lightningcss@1.31.1)(sass-embedded@1.97.3)(sass@1.97.3))(vue@3.5.29(typescript@5.9.3))
@@ -915,9 +906,6 @@ packages:
 
   '@types/node@24.10.14':
     resolution: {integrity: sha512-OowOUbD1lBCOFIPOZ8xnMIhgqA4sCutMiYOmPHL1PTLt5+y1XA+g2+yC9OOyz8p+deMZqPZLxfMjYIfrKsPeFg==}
-
-  '@types/sortablejs@1.15.9':
-    resolution: {integrity: sha512-7HP+rZGE2p886PKV9c9OJzLBI6BBJu1O7lJGYnPyG3fS4/duUCcngkNCjsLwIMV+WMqANe3tt4irrXHSIe68OQ==}
 
   '@types/web-bluetooth@0.0.20':
     resolution: {integrity: sha512-g9gZnnXVq7gM7v3tJCWV/qw7w+KeOlSHAhgF9RytFyifW6AF61hdT2ucrYhPq9hLs5JIryeupHV3qGk95dH9ow==}
@@ -3031,8 +3019,6 @@ snapshots:
     dependencies:
       undici-types: 7.16.0
 
-  '@types/sortablejs@1.15.9': {}
-
   '@types/web-bluetooth@0.0.20': {}
 
   '@types/web-bluetooth@0.0.21': {}
@@ -3988,7 +3974,8 @@ snapshots:
       mrmime: 2.0.1
       totalist: 3.0.1
 
-  sortablejs@1.15.7: {}
+  sortablejs@1.15.7:
+    optional: true
 
   source-map-js@1.2.1: {}
 

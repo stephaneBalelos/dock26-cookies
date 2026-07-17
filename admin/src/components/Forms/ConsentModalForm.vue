@@ -7,13 +7,12 @@
         }">
             <template #header>
                 <div class="flex justify-between w-full">
-                    <div class="text-lg font-bold m-0">Einwilligungs Modal - {{
-                        props.consentConfig.locale.toUpperCase() }}</div>
+                    <div class="text-lg font-bold m-0">Einwilligungs-Modal</div>
 
                     <div class="flex">
                         <UButton color="neutral" variant="outline" class="mr-2" icon="i-heroicons-eye"
                             @click="() => $consentConfig.showConsentModal()">
-                            Einwilligungs Modal anzeigen
+                            Einwilligungs-Modal anzeigen
                         </UButton>
                     </div>
                 </div>
@@ -90,8 +89,7 @@ const form = reactive<Form>({
 })
 
 async function onSubmit($event: FormSubmitEvent<Form>) {
-    console.log('Form submitted', form)
-    $emits('saved', { locale: props.consentConfig.locale, ...$event.data })
+    $emits('saved', $event.data)
 }
 </script>
 

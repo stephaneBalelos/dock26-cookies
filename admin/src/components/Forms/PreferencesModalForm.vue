@@ -7,13 +7,12 @@
         }">
             <template #header>
                 <div class="flex justify-between w-full">
-                    <div class="text-lg font-bold m-0">Preferenzen Modal - {{
-                        props.preferencesConfig.locale.toUpperCase() }}</div>
+                    <div class="text-lg font-bold m-0">Präferenzen-Modal</div>
 
                     <div class="flex">
                         <UButton color="neutral" variant="outline" class="mr-2" icon="i-heroicons-eye"
                             @click="() => $consentConfig.showPreferencesModal()">
-                            Preferenzen Modal anzeigen
+                            Präferenzen-Modal anzeigen
                         </UButton>
                     </div>
                 </div>
@@ -30,10 +29,10 @@
                         <UFormField label="Text für 'Alle Ablehnen' Button" name="acceptNecessaryBtn">
                             <UInput v-model="form.acceptNecessaryBtn" class="w-full" />
                         </UFormField>
-                        <UFormField label="Text für 'Präferenzen' Button" name="savePreferencesBtn">
+                        <UFormField label="Text für 'Präferenzen speichern' Button" name="savePreferencesBtn">
                             <UInput v-model="form.savePreferencesBtn" class="w-full" />
                         </UFormField>
-                        <UFormField label="Text für 'Präferenzen' Button" name="closeIconLabel">
+                        <UFormField label="Beschriftung für 'Schließen' Icon" name="closeIconLabel">
                             <UInput v-model="form.closeIconLabel" class="w-full" />
                         </UFormField>
                     </div>
@@ -90,8 +89,7 @@ const form = reactive<Form>({
 })
 
 async function onSubmit($event: FormSubmitEvent<Form>) {
-    console.log('Form submitted', form)
-    $emits('saved', { locale: props.preferencesConfig.locale, ...$event.data })
+    $emits('saved', $event.data)
 }
 </script>
 

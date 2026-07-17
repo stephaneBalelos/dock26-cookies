@@ -37,11 +37,10 @@ class Admin
             return;
         }
 
-        // Add vue from CDN
-        wp_enqueue_script('dock26-cookies-admin-js', plugins_url('../admin/dist/assets/js/admin.iife.js', __FILE__), array(), DOCK26_COOKIES_PLUGIN_VERSION, true);
-        wp_enqueue_style('dock26-cookies-admin-css', plugins_url('../admin/dist/assets/css/admin.css', __FILE__), array(), DOCK26_COOKIES_PLUGIN_VERSION);
+        wp_enqueue_script('dock26-cookies-admin-js', plugins_url('admin/dist/assets/js/admin.iife.js', DOCK26_COOKIES_PLUGIN_FILE), array(), DOCK26_COOKIES_PLUGIN_VERSION, true);
+        wp_enqueue_style('dock26-cookies-admin-css', plugins_url('admin/dist/assets/css/admin.css', DOCK26_COOKIES_PLUGIN_FILE), array(), DOCK26_COOKIES_PLUGIN_VERSION);
 
-        $config = new CookieConfig([], []);
+        $config = new CookieConfig();
 
         // Localize script with data
         wp_localize_script('dock26-cookies-admin-js', 'dock26CookiesAdmin', [

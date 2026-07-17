@@ -82,8 +82,10 @@ class CookieConfig
 
     private $customStyles = self::CUSTOM_STYLES;
 
+    // cookie_name must stay 'cc_cookie': renaming it would invalidate the
+    // consent every existing visitor has already stored.
     private $settings = [
-        'cookie_name' => 'd26Cookies',
+        'cookie_name' => 'cc_cookie',
         'default_language' => 'de',
         'privacy_btn' => [
             'label' => 'Datenschutzerklärung',
@@ -107,7 +109,7 @@ class CookieConfig
     ];
 
     private $consentModalConfig = [
-        'title' => 'Wir Benutzen Cookies',
+        'title' => 'Wir benutzen Cookies',
         'description' => "Auf dieser Website nutzen wir Cookies und vergleichbare Funktionen zur Verarbeitung von Endgeräteinformationen und personenbezogenen Daten (wie z.B. IP-Adressen oder Browserinformationen). Die Verarbeitung dient der Einbindung von Inhalten, externen Diensten und Elementen Dritter, der statistischen Analyse/Messung, personalisierten Werbung sowie der Einbindung sozialer Medien.",
         'acceptAllBtn' => "Alles akzeptieren",
         'acceptNecessaryBtn' => "Nur notwendige",
@@ -118,7 +120,7 @@ class CookieConfig
         'title' => 'Cookies Präferenzen',
         'acceptAllBtn' => "Alles akzeptieren",
         'acceptNecessaryBtn' => "Nur notwendige",
-        'savePreferencesBtn' => "Mein Auswahl speichern",
+        'savePreferencesBtn' => "Meine Auswahl speichern",
         'closeIconLabel' => "schließen"
     ];
 
@@ -147,8 +149,8 @@ class CookieConfig
 
     private $preferencesSections = [
         [
-            'title' => 'Strictly necessary cookies',
-            'description' => 'Diese Cookies sind für das ordnungsgemäße Funktionieren meiner Website unerlässlich. Ohne diese Cookies würde die Website nicht ordnungsgemäß funktionieren.',
+            'title' => 'Unbedingt erforderliche Cookies',
+            'description' => 'Diese Cookies sind für das ordnungsgemäße Funktionieren der Website unerlässlich. Ohne diese Cookies würde die Website nicht ordnungsgemäß funktionieren.',
             'linkedCategory' => 'necessary'
         ],
         [
@@ -157,17 +159,17 @@ class CookieConfig
             'linkedCategory' => 'external_media'
         ],
         [
-            'title' => 'Performance and Analytics cookies',
-            'description' => 'Dank dieser Cookies kann sich die Website an die Einstellungen erinnern, die Sie in der Vergangenheit vorgenommen haben',
+            'title' => 'Performance- und Analyse-Cookies',
+            'description' => 'Dank dieser Cookies kann sich die Website an die Einstellungen erinnern, die Sie in der Vergangenheit vorgenommen haben.',
             'linkedCategory' => 'analytics'
         ],
         [
-            'title' => 'Marketing & Werbungen',
-            'description' => 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.',
+            'title' => 'Marketing & Werbung',
+            'description' => 'Diese Cookies werden verwendet, um Ihnen personalisierte Werbung anzuzeigen, die auf Ihren Interessen basiert. Sie helfen außerdem dabei, die Wirksamkeit von Werbekampagnen zu messen.',
             'linkedCategory' => 'marketing'
         ],
         [
-            'title' => 'Security cookies',
+            'title' => 'Sicherheits-Cookies',
             'description' => 'Diese Cookies tragen zur Sicherheit der Website bei, indem sie bösartige Aktivitäten erkennen und verhindern. Sie helfen dabei, die Website vor Angriffen zu schützen und die Integrität der Benutzerdaten zu gewährleisten.',
             'linkedCategory' => 'security'
         ]
@@ -204,10 +206,10 @@ class CookieConfig
         $consentModalConfig = $this->consentModalConfig;
         $consentModalConfig['footer'] = \sprintf(
             '<a href="%s" target="_blank">%s</a> <a href="%s" target="_blank">%s</a>',
-            $settings['privacy_btn']['url'],
-            $settings['privacy_btn']['label'],
-            $settings['imprint_btn']['url'],
-            $settings['imprint_btn']['label']
+            esc_url($settings['privacy_btn']['url']),
+            esc_html($settings['privacy_btn']['label']),
+            esc_url($settings['imprint_btn']['url']),
+            esc_html($settings['imprint_btn']['label'])
         );
 
         $preferencesConfig = $this->preferencesModal;
@@ -241,16 +243,16 @@ class CookieConfig
 
     private static function validateRequiredString(array $config, string $key, string $message): void
     {
-        if (empty($config[$key])) {
+        if (!isset($config[$key]) || !\is_string($config[$key]) || \trim($config[$key]) === '') {
             throw new \InvalidArgumentException($message);
         }
     }
 
     private function initConsentModalConfig(): void
     {
-        $saved = $this->get_option('consent_modal_config');
-        if ($saved) {
-            $this->consentModalConfig = array_merge($this->consentModalConfig, json_decode($saved, true));
+        $saved = self::readJsonOption('consent_modal_config');
+        if ($saved !== null) {
+            $this->consentModalConfig = array_merge($this->consentModalConfig, $saved);
         }
     }
 
@@ -275,9 +277,9 @@ class CookieConfig
 
     private function initPreferenceModalConfig(): void
     {
-        $saved = $this->get_option('preference_modal_config');
-        if ($saved) {
-            $this->preferencesModal = array_merge($this->preferencesModal, json_decode($saved, true));
+        $saved = self::readJsonOption('preference_modal_config');
+        if ($saved !== null) {
+            $this->preferencesModal = array_merge($this->preferencesModal, $saved);
         }
     }
 
@@ -302,9 +304,19 @@ class CookieConfig
 
     private function initGUISettings(): void
     {
-        $saved = $this->get_option('gui_settings');
-        if ($saved) {
-            $this->guiOptions = array_replace_recursive($this->guiOptions, json_decode($saved, true));
+        $saved = self::readJsonOption('gui_settings');
+        if ($saved === null) {
+            return;
+        }
+
+        // Copy only present, non-null values so partial or legacy saves
+        // can't wipe out the defaults.
+        foreach (['consentModal', 'preferencesModal'] as $modal) {
+            foreach (['layout', 'position'] as $key) {
+                if (isset($saved[$modal][$key])) {
+                    $this->guiOptions[$modal][$key] = $saved[$modal][$key];
+                }
+            }
         }
     }
 
@@ -314,8 +326,8 @@ class CookieConfig
             if (isset($settings['consentModal']['layout']) && !\in_array($settings['consentModal']['layout'], ['box', 'bar', 'cloud'])) {
                 throw new \InvalidArgumentException('Das Layout Basis-Design des Consent Modals ist ungültig. Erlaubte Werte sind: box, bar, cloud.');
             }
-            if (isset($settings['consentModal']['position']) && !\in_array($settings['consentModal']['position'], ['top left', 'top center', 'top right', 'middle left', 'middle center', 'middle right', 'bottom left', 'bottom center', 'bottom right', 'top', 'bottom'])) {
-                throw new \InvalidArgumentException('Die Position des Consent Modals ist ungültig. Erlaubte Werte sind: top left, top center, top right, middle left, middle center, middle right, bottom left, bottom center, bottom right.');
+            if (isset($settings['consentModal']['position']) && !\in_array($settings['consentModal']['position'], ['top left', 'top center', 'top right', 'middle left', 'middle center', 'middle right', 'bottom left', 'bottom center', 'bottom right', 'top', 'middle', 'bottom'])) {
+                throw new \InvalidArgumentException('Die Position des Consent Modals ist ungültig. Erlaubte Werte sind: top, middle, bottom, top left, top center, top right, middle left, middle center, middle right, bottom left, bottom center, bottom right.');
             }
         }
 
@@ -328,25 +340,27 @@ class CookieConfig
             }
         }
 
-        update_option(self::OPTION_PREFIX . 'gui_settings', json_encode([
-            'consentModal' => [
-                'layout' => $settings['consentModal']['layout'] ?? null,
-                'position' => $settings['consentModal']['position'] ?? null,
-            ],
-            'preferencesModal' => [
-                'layout' => $settings['preferencesModal']['layout'] ?? null,
-                'position' => $settings['preferencesModal']['position'] ?? null,
-            ],
-        ]));
+        // Merge over the stored settings so a partial payload (e.g. only the
+        // consent modal) doesn't clear the other modal's values.
+        $clean = self::readJsonOption('gui_settings') ?? [];
+        foreach (['consentModal', 'preferencesModal'] as $modal) {
+            foreach (['layout', 'position'] as $key) {
+                if (isset($settings[$modal][$key])) {
+                    $clean[$modal][$key] = $settings[$modal][$key];
+                }
+            }
+        }
+
+        update_option(self::OPTION_PREFIX . 'gui_settings', json_encode($clean));
 
         return true;
     }
 
     private function initCustomStyles(): void
     {
-        $saved = $this->get_option('custom_styles');
-        if ($saved) {
-            $this->customStyles = array_merge($this->customStyles, json_decode($saved, true));
+        $saved = self::readJsonOption('custom_styles');
+        if ($saved !== null) {
+            $this->customStyles = array_merge($this->customStyles, $saved);
         }
     }
 
@@ -379,8 +393,29 @@ class CookieConfig
         return true;
     }
 
-    private function get_option(string $option_name, $default = null)
+    /**
+     * Removes every option this class persists. Called on plugin uninstall.
+     */
+    public static function deleteAllOptions(): void
     {
-        return get_option(self::OPTION_PREFIX . $option_name, $default);
+        foreach (['consent_modal_config', 'preference_modal_config', 'gui_settings', 'custom_styles'] as $option_name) {
+            delete_option(self::OPTION_PREFIX . $option_name);
+        }
+    }
+
+    /**
+     * Reads a JSON-encoded plugin option; returns null if it is missing or
+     * cannot be decoded to an array (e.g. a corrupted option value).
+     */
+    private static function readJsonOption(string $option_name): ?array
+    {
+        $saved = get_option(self::OPTION_PREFIX . $option_name);
+        if (!\is_string($saved) || $saved === '') {
+            return null;
+        }
+
+        $decoded = json_decode($saved, true);
+
+        return \is_array($decoded) ? $decoded : null;
     }
 }

@@ -22,9 +22,9 @@ class Shortcode
 
 
         return '<div
-            data-service="'. $atts['service'] .'"
+            data-service="' . esc_attr($atts['service']) . '"
             data-id="' . esc_attr($atts['id']) . '"
-            data-thumbnail="' . esc_attr($atts['thumbnail']) . '"
+            data-thumbnail="' . esc_url($atts['thumbnail']) . '"
             data-autoscale
             data-iframe-loading="lazy"
             data-iframe-frameborder="0">

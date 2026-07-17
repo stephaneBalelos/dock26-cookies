@@ -67,6 +67,7 @@ declare module "@orestbida/iframemanager" {
     reset: (hard?: boolean) => void;
   }
 
-  function iframemanager(): IframeManagerInstance;
-  export default iframemanager;
+  // No default export: dist/iframemanager.js is an IIFE with no module
+  // exports — it only registers window.iframemanager. Import the package
+  // for its side effect and use the global.
 }

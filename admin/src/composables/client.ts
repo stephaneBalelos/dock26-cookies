@@ -1,16 +1,13 @@
-import { computed, inject } from "vue";
-
+// Injected by wp_localize_script before this bundle runs (includes/admin.php).
+const adminData = window.dock26CookiesAdmin;
 
 export function useClient() {
-  const apiUrl = inject("apiUrl", "");
-  const nonce = inject("nonce", "");
+  const apiUrl = adminData?.apiUrl ?? "";
 
-  const requestHeader = computed(() => {
-    return {
-      "Content-Type": "application/json",
-      "X-WP-Nonce": nonce,
-    };
-  });
+  const requestHeader = {
+    "Content-Type": "application/json",
+    "X-WP-Nonce": adminData?.nonce ?? "",
+  };
 
   async function jsonQuery(
     url: string,
@@ -19,26 +16,42 @@ export function useClient() {
   ) {
     const res = await fetch(url, {
       method: method,
-      headers: requestHeader.value,
+      headers: requestHeader,
       body: data ? JSON.stringify(data) : null,
     });
-    return await res.json();
+    const body = await res.json().catch(() => null);
+
+    if (!res.ok) {
+      // Validation errors (422) arrive as a plain message string,
+      // WP_Error responses as { message } objects.
+      const message =
+        typeof body === "string" && body
+          ? body
+          : (body?.message ?? `Anfrage fehlgeschlagen (HTTP ${res.status})`);
+      throw new Error(message);
+    }
+
+    return body;
   }
 
   async function getConfig() {
-    return jsonQuery(`${apiUrl}/config`, "GET")
+    return jsonQuery(`${apiUrl}/config`, "GET");
   }
 
   async function updateConsentModalConfig(config: Record<string, any>) {
-    return jsonQuery(`${apiUrl}/update-consent-modal-config`, "PUT", { config });
+    return jsonQuery(`${apiUrl}/update-consent-modal-config`, "PUT", {
+      config,
+    });
   }
 
   async function updatePreferencesModalConfig(config: Record<string, any>) {
-    return jsonQuery(`${apiUrl}/update-preference-modal-config`, "PUT", { config });
+    return jsonQuery(`${apiUrl}/update-preference-modal-config`, "PUT", {
+      config,
+    });
   }
 
   async function updateGuiOptions(config: Record<string, any>) {
-    return jsonQuery(`${apiUrl}/update-gui-config`, "PUT", { config })
+    return jsonQuery(`${apiUrl}/update-gui-config`, "PUT", { config });
   }
 
   async function updateCustomStyles(config: Record<string, any>) {

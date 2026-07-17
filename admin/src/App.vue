@@ -17,7 +17,6 @@ if (!apiUrl || !nonce) {
 const currentPath = ref<string>(window.location.hash || '/')
 window.addEventListener('hashchange', () => {
   currentPath.value = window.location.hash
-  console.log('Current path:', currentPath.value) // Debugging log
 })
 
 const currentView = computed(() => {

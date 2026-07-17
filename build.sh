@@ -1,8 +1,10 @@
-# This script is used to build the plugin for production.
-# It will package the theme files in a zip file
-
+#!/usr/bin/env bash
+# Builds the plugin for production and packages the runtime files in a zip.
+#
 # Usage: $ bash ./build.sh
-# Make sure to run this script from the root of the plugin directory
+# Make sure to run this script from the root of the plugin directory.
+
+set -euo pipefail
 
 PLUGIN_NAME="dock26-cookies"
 
@@ -12,17 +14,18 @@ if [ ! -f "${PLUGIN_NAME}.php" ]; then
     exit 1
 fi
 
-# Build the assets
-pnpm build
+# Build the admin and frontend bundles
+pnpm --dir admin install --frozen-lockfile
+pnpm --dir admin build
+pnpm --dir frontend install --frozen-lockfile
+pnpm --dir frontend build
 
-# Create a zip file of the build directory
-zip -r "${PLUGIN_NAME}.zip" . -x "node_modules/*"
+# Package only the runtime files
+rm -f "${PLUGIN_NAME}.zip"
+zip -r "${PLUGIN_NAME}.zip" \
+    "${PLUGIN_NAME}.php" \
+    includes \
+    admin/dist \
+    frontend/dist
 
-# Check if the zip command was successful
-if [ $? -eq 0 ]; then
-    echo "Build successful! Created ${PLUGIN_NAME}.zip"
-else
-    echo "Build failed!"
-    exit 1
-fi
-
+echo "Build successful! Created ${PLUGIN_NAME}.zip"

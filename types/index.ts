@@ -1,4 +1,10 @@
 export type CookieConfig = {
+  settings: {
+    cookie_name: string;
+    default_language: string;
+    privacy_btn: { label: string; url: string };
+    imprint_btn: { label: string; url: string };
+  };
   guiOptions?: {
     consentModal: {
       layout: "box" | "bar" | "cloud";
@@ -37,7 +43,6 @@ export type CookieConfig = {
 export type CustomStyles = Record<string, string>;
 
 export type ConsentModalConfig = {
-  locale: "de" | "en";
   title?: string;
   description?: string;
   acceptAllBtn?: string;
@@ -46,7 +51,6 @@ export type ConsentModalConfig = {
 };
 
 export type PreferencesModalConfig = {
-  locale: "de" | "en";
   title?: string;
   acceptAllBtn?: string;
   acceptNecessaryBtn?: string;

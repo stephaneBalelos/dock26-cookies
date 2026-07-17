@@ -1,7 +1,14 @@
 import * as CookieConsent from "vanilla-cookieconsent";
 import "vanilla-cookieconsent/dist/cookieconsent.css";
+// Side-effect import: the iframemanager dist file is an IIFE that registers
+// window.iframemanager — without it the bundle has no runtime and
+// window.iframemanager() below throws.
+import "@orestbida/iframemanager";
 import "@orestbida/iframemanager/dist/iframemanager.css";
-import { type IframeManagerInstance } from "@orestbida/iframemanager";
+import {
+  type IframeManagerInstance,
+  type IframeManagerRunOptions,
+} from "@orestbida/iframemanager";
 import type { CookieConfig, CustomStyles } from "../../types";
 
 /**
@@ -20,127 +27,123 @@ declare global {
   }
 }
 
+type ServiceDefinition = IframeManagerRunOptions["services"][string];
+
+// Embed/notice details for every service this plugin can consent-gate.
+// Which of them are active — and which consent category they belong to —
+// comes from the server config (CookieConfig::$services).
+const SERVICE_DEFINITIONS: Record<string, ServiceDefinition> = {
+  youtube: {
+    embedUrl: "https://www.youtube-nocookie.com/embed/{data-id}",
+    thumbnailUrl: "https://i3.ytimg.com/vi/{data-id}/hqdefault.jpg",
+
+    iframe: {
+      allow:
+        "accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen;",
+    },
+
+    languages: {
+      de: {
+        loadBtn: "Video laden",
+        loadAllBtn: "Akzeptieren und laden",
+        notice:
+          'Dieser Inhalt wird von einem Drittanbieter gehostet. Wenn Sie den externen Inhalt anzeigen, akzeptieren Sie die <a rel="noreferrer noopener" href="https://www.youtube.com/t/terms" target="_blank">Nutzungsbedingungen</a> von youtube.com.',
+      },
+    },
+  },
+  googlemaps: {
+    embedUrl: "https://www.google.com/maps/embed?pb={data-id}",
+
+    iframe: {
+      allow: "picture-in-picture; fullscreen;",
+    },
+
+    languages: {
+      de: {
+        loadBtn: "Karte laden",
+        loadAllBtn: "Nicht mehr fragen",
+        notice:
+          'Dieser Inhalt wird von einem Drittanbieter gehostet. Wenn Sie den externen Inhalt anzeigen, akzeptieren Sie die <a rel="noreferrer noopener" href="https://cloud.google.com/maps-platform/terms" target="_blank">Nutzungsbedingungen</a> von Google Maps.',
+      },
+    },
+  },
+};
+
 window.CookieConsent = CookieConsent;
 const im = window.iframemanager();
 
 document.addEventListener("DOMContentLoaded", async () => {
-  console.log(
-    "Initializing Cookie Consent with categories:",
-    window.dock26Cookies,
+  const config = window.dock26Cookies.config;
+  const defaultLanguage = config.language.default;
+
+  // Service id -> consent category, taken from the server config.
+  const serviceCategories = new Map<string, string>();
+  for (const [category, categoryConfig] of Object.entries(config.categories)) {
+    for (const service of Object.keys(categoryConfig.services ?? {})) {
+      serviceCategories.set(service, category);
+    }
+  }
+
+  const services = Object.fromEntries(
+    Object.entries(SERVICE_DEFINITIONS).filter(([id]) =>
+      serviceCategories.has(id),
+    ),
   );
 
   im.run({
-    currLang: "de",
+    currLang: defaultLanguage,
     onChange: ({ changedServices, eventSource }) => {
-      if (eventSource.type === "click") {
-        console.log("Services changed via click:", changedServices);
-        const servicesToAccept = [
-          ...(CookieConsent.getUserPreferences().acceptedServices[
-            "external_media"
-          ] || []),
-          ...changedServices,
-        ];
+      if (eventSource.type !== "click") {
+        return;
+      }
 
-        CookieConsent.acceptService(servicesToAccept, "external_media");
+      // Accepting via an iframe placeholder must not drop already-accepted
+      // services of the same category, so merge instead of replacing.
+      const changedByCategory = new Map<string, string[]>();
+      for (const service of changedServices) {
+        const category = serviceCategories.get(service);
+        if (!category) {
+          continue;
+        }
+        const changed = changedByCategory.get(category);
+        if (changed) {
+          changed.push(service);
+        } else {
+          changedByCategory.set(category, [service]);
+        }
+      }
+
+      for (const [category, changed] of changedByCategory) {
+        const accepted =
+          CookieConsent.getUserPreferences().acceptedServices[category] || [];
+        CookieConsent.acceptService([...accepted, ...changed], category);
       }
     },
 
-    services: {
-      youtube: {
-        embedUrl: "https://www.youtube-nocookie.com/embed/{data-id}",
-        thumbnailUrl: "https://i3.ytimg.com/vi/{data-id}/hqdefault.jpg",
-
-        iframe: {
-          allow:
-            "accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen;",
-        },
-
-        languages: {
-          de: {
-            loadBtn: "Accept",
-            notice:
-              'This content is hosted by a third party. By showing the external content you accept the <a rel="noreferrer noopener" href="https://www.youtube.com/t/terms" target="_blank">terms and conditions</a> of youtube.com.',
-            loadAllBtn: "Accept and Load",
-          },
-        },
-      },
-      googlemaps: {
-        embedUrl: "https://www.google.com/maps/embed?pb={data-id}",
-        iframe: {
-          allow: "picture-in-picture; fullscreen;",
-        },
-
-        languages: {
-          de: {
-            notice:
-              'This content is hosted by a third party. By showing the external content you accept the <a rel="noreferrer noopener" href="https://cloud.google.com/maps-platform/terms" target="_blank">terms and conditions</a> of Google Maps.',
-            loadBtn: "Load map",
-            loadAllBtn: "Don't ask again",
-          },
-        },
-      },
-    },
+    services,
   });
 
-  const translations = window.dock26Cookies.config.language.translations;
-  const guiOptions = window.dock26Cookies.config.guiOptions;
-
   await CookieConsent.run({
-    // root: "body",
-    // autoShow: true,
     disablePageInteraction: true,
-    // hideFromBots: true,
-    // mode: 'opt-in',
-    // revision: 0,
 
     cookie: {
-      name: "cc_cookie",
-      // domain: location.hostname,
-      // path: '/',
-      // sameSite: "Lax",
-      // expiresAfterDays: 182,
+      name: config.settings.cookie_name,
     },
 
     categories: {
-      ...window.dock26Cookies.config.categories,
+      ...config.categories,
     },
 
     // https://cookieconsent.orestbida.com/reference/configuration-reference.html#guioptions
-    guiOptions: guiOptions,
+    guiOptions: config.guiOptions,
 
     language: {
-      default: "de",
-      translations: translations,
+      default: defaultLanguage,
+      translations: config.language.translations,
     },
 
-    onFirstConsent: ({ cookie }) => {
-      console.log("First consent given:", cookie);
-    },
-
-    onConsent: ({ cookie }) => {
-      console.log("Consent updated:", cookie);
-    },
-
-    onChange: ({ cookie, changedServices, changedCategories }) => {
-      console.log(
-        "Consent changed:",
-        cookie,
-        changedServices,
-        changedCategories,
-      );
+    onChange: ({ cookie, changedServices }) => {
       updateIframeAcceptance(cookie, changedServices);
-    },
-
-    onModalReady: ({ modalName }) => {
-      console.log("ready:", modalName);
-    },
-
-    onModalShow: ({ modalName }) => {
-      console.log("visible:", modalName);
-    },
-
-    onModalHide: ({ modalName }) => {
-      console.log("hidden:", modalName);
     },
   });
 
@@ -148,14 +151,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     cookie: CookieConsent.CookieValue,
     changedServicesCategories: { [key: string]: string[] },
   ) {
-    console.log(Object.keys(changedServicesCategories));
-    const changedServices: string[] = [];
-    Object.keys(changedServicesCategories).forEach((category) => {
-      const services = changedServicesCategories[category];
-      console.log(`Category "${category}" changed. Services:`, services);
-      changedServices.push(...services);
-    });
-    // Destructure the cookie object to get accepted services
+    const changedServices = Object.values(changedServicesCategories).flat();
     const acceptedServices = Object.values(cookie.services).flat();
     for (const service of changedServices) {
       if (acceptedServices.includes(service)) {
