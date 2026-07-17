@@ -2,7 +2,7 @@ import * as CookieConsent from "vanilla-cookieconsent";
 import "vanilla-cookieconsent/dist/cookieconsent.css";
 import "@orestbida/iframemanager/dist/iframemanager.css";
 import { type IframeManagerInstance } from "@orestbida/iframemanager";
-import type { CookieConfig } from "../../types";
+import type { CookieConfig, CustomStyles } from "../../types";
 
 /**
  * All config. options available here:
@@ -14,6 +14,7 @@ declare global {
     iframemanager: () => IframeManagerInstance;
     dock26Cookies: {
       config: CookieConfig;
+      customStyles?: CustomStyles;
     };
     CookieConsent: typeof CookieConsent;
   }
@@ -183,6 +184,27 @@ document.addEventListener("DOMContentLoaded", async () => {
       });
     }
   };
+
+  // Scoped to #cc-main rather than :root/body: the stylesheet declares some
+  // variables (e.g. --cc-modal-margin) on #cc-main itself, which would win over
+  // an inherited value. Appending late also beats the vendor rule on document order.
+  const initCustomStyles = () => {
+    const customStyles = window.dock26Cookies?.customStyles;
+    if (!customStyles) {
+      return;
+    }
+
+    const declarations = Object.entries(customStyles)
+      .map(([property, value]) => `${property}:${value}`)
+      .join(";");
+
+    const style = document.createElement("style");
+    style.id = "dock26-cookies-custom-styles";
+    style.textContent = `#cc-main{${declarations}}`;
+    document.head.appendChild(style);
+  };
+
+  initCustomStyles();
 
   initTriggers();
 });

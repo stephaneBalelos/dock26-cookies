@@ -105,6 +105,7 @@ class Main
 
         wp_localize_script('dock26_cookieconsent_js', 'dock26Cookies', [
             'config' => $Cookies->getConfig(),
+            'customStyles' => $Cookies->getCustomStyles(),
         ]);
     }
 

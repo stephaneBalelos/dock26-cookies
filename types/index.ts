@@ -29,6 +29,13 @@ export type CookieConfig = {
   };
 };
 
+/**
+ * CSS custom properties of the consent modal, keyed by variable name (e.g. "--cc-bg").
+ * Kept separate from CookieConfig: that object is spread into cookieConsent.run(),
+ * which must not receive these.
+ */
+export type CustomStyles = Record<string, string>;
+
 export type ConsentModalConfig = {
   locale: "de" | "en";
   title?: string;

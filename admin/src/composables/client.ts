@@ -41,10 +41,15 @@ export function useClient() {
     return jsonQuery(`${apiUrl}/update-gui-config`, "PUT", { config })
   }
 
+  async function updateCustomStyles(config: Record<string, any>) {
+    return jsonQuery(`${apiUrl}/update-custom-styles`, "PUT", { config });
+  }
+
   return {
     getConfig,
     updateConsentModalConfig,
     updatePreferencesModalConfig,
     updateGuiOptions,
+    updateCustomStyles,
   };
 }

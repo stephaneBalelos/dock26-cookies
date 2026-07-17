@@ -13,9 +13,8 @@
         </template>
         <template #right>
             <div>
-                <a href="#/">Home</a> |
-                <a href="#/settings">About</a> |
-                <a href="#/non-existent-path">Broken Link</a>
+                <a href="#/">Einwilligung</a> |
+                <a href="#/settings">Einstellungen</a>
             </div>
         </template>
     </UHeader>

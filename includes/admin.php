@@ -47,7 +47,8 @@ class Admin
         wp_localize_script('dock26-cookies-admin-js', 'dock26CookiesAdmin', [
             'apiUrl' => esc_url_raw(rest_url('dock26-cookies/v1')),
             'nonce' => wp_create_nonce('wp_rest'),
-            'config' => $config->getConfig()
+            'config' => $config->getConfig(),
+            'customStyles' => $config->getCustomStyles()
         ]);
     }
 }

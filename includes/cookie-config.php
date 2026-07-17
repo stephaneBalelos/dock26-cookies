@@ -10,6 +10,78 @@ class CookieConfig
 {
     private const OPTION_PREFIX = 'dock26_cookies_';
 
+    /**
+     * CSS custom properties of the cookie consent modal, keyed by variable name.
+     * Values that the upstream stylesheet defines as `var(--other)` references are
+     * resolved here to the concrete value they point at.
+     */
+    private const CUSTOM_STYLES = [
+        '--cc-bg' => '#ffffff',
+        '--cc-primary-color' => '#2c2f31',
+        '--cc-secondary-color' => '#5e6266',
+
+        '--cc-btn-primary-bg' => '#30363c',
+        '--cc-btn-primary-color' => '#ffffff',
+        '--cc-btn-primary-border-color' => '#30363c',
+        '--cc-btn-primary-hover-bg' => '#000000',
+        '--cc-btn-primary-hover-color' => '#ffffff',
+        '--cc-btn-primary-hover-border-color' => '#000000',
+
+        '--cc-btn-secondary-bg' => '#eaeff2',
+        '--cc-btn-secondary-color' => '#2c2f31',
+        '--cc-btn-secondary-border-color' => '#eaeff2',
+        '--cc-btn-secondary-hover-bg' => '#d4dae0',
+        '--cc-btn-secondary-hover-color' => '#000000',
+        '--cc-btn-secondary-hover-border-color' => '#d4dae0',
+
+        '--cc-separator-border-color' => '#f0f4f7',
+
+        '--cc-toggle-on-bg' => '#30363c',
+        '--cc-toggle-off-bg' => '#667481',
+        '--cc-toggle-on-knob-bg' => '#ffffff',
+        '--cc-toggle-off-knob-bg' => '#ffffff',
+        '--cc-toggle-enabled-icon-color' => '#ffffff',
+        '--cc-toggle-disabled-icon-color' => '#ffffff',
+        '--cc-toggle-readonly-bg' => '#d5dee2',
+        '--cc-toggle-readonly-knob-bg' => '#ffffff',
+        '--cc-toggle-readonly-knob-icon-color' => '#d5dee2',
+
+        '--cc-section-category-border' => '#f0f4f7',
+        '--cc-cookie-category-block-bg' => '#f0f4f7',
+        '--cc-cookie-category-block-border' => '#f0f4f7',
+        '--cc-cookie-category-block-hover-bg' => '#e9eff4',
+        '--cc-cookie-category-block-hover-border' => '#e9eff4',
+        '--cc-cookie-category-expanded-block-bg' => '#ffffff00',
+        '--cc-cookie-category-expanded-block-hover-bg' => '#dee4e9',
+
+        '--cc-overlay-bg' => 'rgba(0, 0, 0, 0.65)',
+        '--cc-webkit-scrollbar-bg' => '#f0f4f7',
+        '--cc-webkit-scrollbar-hover-bg' => '#000000',
+
+        '--cc-footer-bg' => '#eaeff2',
+        '--cc-footer-color' => '#5e6266',
+        '--cc-footer-border-color' => '#e4eaed',
+
+        '--cc-modal-border-radius' => '8px',
+        '--cc-btn-border-radius' => '6px',
+        '--cc-modal-margin' => '16px',
+    ];
+
+    /**
+     * Custom style properties holding a pixel length instead of a color.
+     */
+    private const SIZE_KEYS = [
+        '--cc-modal-border-radius',
+        '--cc-btn-border-radius',
+        '--cc-modal-margin',
+    ];
+
+    private const SIZE_PATTERN = '/^\d+(\.\d+)?px$/';
+
+    private const COLOR_PATTERN = '/^(#([0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})|rgba?\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*(,\s*(0|1|0?\.\d+)\s*)?\)|hsla?\(\s*\d+(\.\d+)?(deg)?\s*,\s*\d+(\.\d+)?%\s*,\s*\d+(\.\d+)?%\s*(,\s*(0|1|0?\.\d+)\s*)?\)|transparent)$/';
+
+    private $customStyles = self::CUSTOM_STYLES;
+
     private $settings = [
         'cookie_name' => 'd26Cookies',
         'default_language' => 'de',
@@ -117,6 +189,12 @@ class CookieConfig
         $this->initConsentModalConfig();
         $this->initPreferenceModalConfig();
         $this->initGUISettings();
+        $this->initCustomStyles();
+    }
+
+    public function getCustomStyles(): array
+    {
+        return $this->customStyles;
     }
 
     public function getConfig(): array
@@ -260,6 +338,43 @@ class CookieConfig
                 'position' => $settings['preferencesModal']['position'] ?? null,
             ],
         ]));
+
+        return true;
+    }
+
+    private function initCustomStyles(): void
+    {
+        $saved = $this->get_option('custom_styles');
+        if ($saved) {
+            $this->customStyles = array_merge($this->customStyles, json_decode($saved, true));
+        }
+    }
+
+    public static function saveCustomStyles(array $styles): bool
+    {
+        $clean = [];
+
+        foreach ($styles as $key => $value) {
+            if (!\array_key_exists($key, self::CUSTOM_STYLES)) {
+                throw new \InvalidArgumentException(\sprintf('Die CSS-Eigenschaft "%s" ist unbekannt.', $key));
+            }
+
+            $isSize = \in_array($key, self::SIZE_KEYS, true);
+            $pattern = $isSize ? self::SIZE_PATTERN : self::COLOR_PATTERN;
+
+            if (!\is_string($value) || !\preg_match($pattern, $value)) {
+                throw new \InvalidArgumentException(\sprintf(
+                    $isSize
+                        ? 'Der Wert für "%s" ist ungültig. Erwartet wird eine Pixel-Angabe, z.B. 8px.'
+                        : 'Der Wert für "%s" ist ungültig. Erwartet wird eine Farbe, z.B. #ffffff oder rgba(0, 0, 0, 0.65).',
+                    $key
+                ));
+            }
+
+            $clean[$key] = $value;
+        }
+
+        update_option(self::OPTION_PREFIX . 'custom_styles', json_encode($clean));
 
         return true;
     }

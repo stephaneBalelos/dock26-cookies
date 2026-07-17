@@ -52,6 +52,14 @@ class APIController extends WP_REST_Controller
                 'permission_callback' => [$this, 'permissions_check']
             ]
         ]);
+
+        register_rest_route($this->namespace, '/update-custom-styles', [
+            [
+                'methods' => WP_REST_Server::EDITABLE,
+                'callback' => [$this, 'update_custom_styles'],
+                'permission_callback' => [$this, 'permissions_check']
+            ]
+        ]);
     }
 
     public function permissions_check()
@@ -86,6 +94,11 @@ class APIController extends WP_REST_Controller
     public function update_gui_config(WP_REST_Request $request): WP_REST_Response
     {
         return $this->handle_config_update($request, [CookieConfig::class, 'saveGUISettings']);
+    }
+
+    public function update_custom_styles(WP_REST_Request $request): WP_REST_Response
+    {
+        return $this->handle_config_update($request, [CookieConfig::class, 'saveCustomStyles']);
     }
 
     private function handle_config_update(WP_REST_Request $request, callable $save_fn): WP_REST_Response
