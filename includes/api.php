@@ -29,6 +29,14 @@ class APIController extends WP_REST_Controller
             ]
         ]);
 
+        register_rest_route($this->namespace, '/update-settings', [
+            [
+                'methods' => WP_REST_Server::EDITABLE,
+                'callback' => [$this, 'update_settings'],
+                'permission_callback' => [$this, 'permissions_check']
+            ]
+        ]);
+
         register_rest_route($this->namespace, '/update-consent-modal-config', [
             [
                 'methods' => WP_REST_Server::EDITABLE,
@@ -79,6 +87,11 @@ class APIController extends WP_REST_Controller
     {
         $config = new CookieConfig();
         return new WP_REST_Response($config->getConfig(), 200);
+    }
+
+    public function update_settings(WP_REST_Request $request): WP_REST_Response
+    {
+        return $this->handle_config_update($request, [CookieConfig::class, 'saveGlobalSettings']);
     }
 
     public function update_consent_modal_config(WP_REST_Request $request): WP_REST_Response

@@ -78,12 +78,15 @@ class CookieConfig
 
     private const SIZE_PATTERN = '/^\d+(\.\d+)?px$/';
 
+    private const COOKIE_NAME_PATTERN = '/^[A-Za-z0-9_-]{1,64}$/';
+
     private const COLOR_PATTERN = '/^(#([0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})|rgba?\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*(,\s*(0|1|0?\.\d+)\s*)?\)|hsla?\(\s*\d+(\.\d+)?(deg)?\s*,\s*\d+(\.\d+)?%\s*,\s*\d+(\.\d+)?%\s*(,\s*(0|1|0?\.\d+)\s*)?\)|transparent)$/';
 
     private $customStyles = self::CUSTOM_STYLES;
 
-    // cookie_name must stay 'cc_cookie': renaming it would invalidate the
-    // consent every existing visitor has already stored.
+    // cookie_name feeds cookie.name of the frontend consent script. It is
+    // admin-editable, but renaming it invalidates the consent every existing
+    // visitor has already stored — the admin form warns about this before save.
     private $settings = [
         'cookie_name' => 'cc_cookie',
         'default_language' => 'de',
@@ -188,6 +191,7 @@ class CookieConfig
 
     public function __construct()
     {
+        $this->initSettings();
         $this->initConsentModalConfig();
         $this->initPreferenceModalConfig();
         $this->initGUISettings();
@@ -246,6 +250,70 @@ class CookieConfig
         if (!isset($config[$key]) || !\is_string($config[$key]) || \trim($config[$key]) === '') {
             throw new \InvalidArgumentException($message);
         }
+    }
+
+    private function initSettings(): void
+    {
+        $saved = self::readJsonOption('settings');
+        if ($saved === null) {
+            return;
+        }
+
+        // Only the admin-editable keys are read back. The button labels and
+        // default_language are never persisted, so they always fall through to
+        // the defaults above.
+        if (isset($saved['cookie_name'])) {
+            $this->settings['cookie_name'] = $saved['cookie_name'];
+        }
+
+        foreach (['privacy_btn', 'imprint_btn'] as $button) {
+            if (isset($saved[$button]['url'])) {
+                $this->settings[$button]['url'] = $saved[$button]['url'];
+            }
+        }
+    }
+
+    public static function saveGlobalSettings(array $settings): bool
+    {
+        self::validateRequiredString($settings, 'cookie_name', 'Der Cookie-Name ist erforderlich.');
+
+        $cookieName = \trim($settings['cookie_name']);
+        if (!\preg_match(self::COOKIE_NAME_PATTERN, $cookieName)) {
+            throw new \InvalidArgumentException('Der Cookie-Name darf nur Buchstaben, Ziffern, Bindestriche und Unterstriche enthalten.');
+        }
+
+        update_option(self::OPTION_PREFIX . 'settings', json_encode([
+            'cookie_name' => $cookieName,
+            'privacy_btn' => [
+                'url' => self::sanitizeUrlSetting($settings, 'privacy_btn', 'Datenschutzerklärung'),
+            ],
+            'imprint_btn' => [
+                'url' => self::sanitizeUrlSetting($settings, 'imprint_btn', 'Impressum'),
+            ],
+        ]));
+
+        return true;
+    }
+
+    /**
+     * Validates and sanitizes the `url` of one of the footer button settings.
+     * esc_url_raw() empties out unsafe schemes such as javascript:, which is
+     * what makes an empty result a rejection rather than a fallback.
+     */
+    private static function sanitizeUrlSetting(array $settings, string $key, string $label): string
+    {
+        if (!isset($settings[$key]) || !\is_array($settings[$key])) {
+            throw new \InvalidArgumentException(\sprintf('Die Einstellungen für "%s" fehlen.', $label));
+        }
+
+        self::validateRequiredString($settings[$key], 'url', \sprintf('Die URL der %s ist erforderlich.', $label));
+
+        $url = esc_url_raw(\trim($settings[$key]['url']));
+        if ($url === '') {
+            throw new \InvalidArgumentException(\sprintf('Die URL der %s ist ungültig.', $label));
+        }
+
+        return $url;
     }
 
     private function initConsentModalConfig(): void
@@ -398,7 +466,7 @@ class CookieConfig
      */
     public static function deleteAllOptions(): void
     {
-        foreach (['consent_modal_config', 'preference_modal_config', 'gui_settings', 'custom_styles'] as $option_name) {
+        foreach (['settings', 'consent_modal_config', 'preference_modal_config', 'gui_settings', 'custom_styles'] as $option_name) {
             delete_option(self::OPTION_PREFIX . $option_name);
         }
     }

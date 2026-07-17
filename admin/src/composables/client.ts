@@ -38,6 +38,10 @@ export function useClient() {
     return jsonQuery(`${apiUrl}/config`, "GET");
   }
 
+  async function updateGlobalSettings(config: Record<string, any>) {
+    return jsonQuery(`${apiUrl}/update-settings`, "PUT", { config });
+  }
+
   async function updateConsentModalConfig(config: Record<string, any>) {
     return jsonQuery(`${apiUrl}/update-consent-modal-config`, "PUT", {
       config,
@@ -60,6 +64,7 @@ export function useClient() {
 
   return {
     getConfig,
+    updateGlobalSettings,
     updateConsentModalConfig,
     updatePreferencesModalConfig,
     updateGuiOptions,

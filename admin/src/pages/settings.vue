@@ -5,6 +5,9 @@
     }">
         <UPageBody class="mt-0">
             <div class="grid grid-cols-1 gap-4">
+                <ConsentGlobalSettingsForm v-if="$consentConfig.config.value?.settings"
+                    :settings="$consentConfig.config.value.settings" @saved="onUpdateGlobalSettings" />
+
                 <GuiOptionsForm v-if="$consentConfig.config.value?.guiOptions"
                     :options="$consentConfig.config.value?.guiOptions" @saved="onUpdateGuiOptions" />
 
@@ -17,10 +20,11 @@
 
 <script setup lang="ts">
 import { inject } from 'vue';
+import ConsentGlobalSettingsForm from '@/components/Forms/ConsentGlobalSettingsForm.vue';
 import GuiOptionsForm from '@/components/Forms/GuiOptionsForm.vue';
 import { useClient } from '@/composables/client';
 import { useConsentConfig } from '@/composables/useConsentConfig';
-import type { CustomStyles } from '../../../types';
+import type { CustomStyles, GlobalSettingsConfig } from '../../../types';
 import type { GuiOptions } from 'vanilla-cookieconsent';
 
 const $consentConfig = useConsentConfig()
@@ -38,6 +42,16 @@ function notifyError(error: unknown) {
         icon: 'i-heroicons-exclamation-triangle',
         color: 'error'
     })
+}
+
+async function onUpdateGlobalSettings(data: GlobalSettingsConfig) {
+    try {
+        await $client.updateGlobalSettings(data);
+        toast.add({ title: 'Allgemeine Einstellungen gespeichert', color: 'success' })
+        await $consentConfig.reloadConfig()
+    } catch (error) {
+        notifyError(error)
+    }
 }
 
 async function onUpdateGuiOptions(data: GuiOptions) {
