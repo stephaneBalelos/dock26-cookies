@@ -69,7 +69,40 @@ const SERVICE_DEFINITIONS: Record<string, ServiceDefinition> = {
       },
     },
   },
+  // Any iframe of a provider without a definition above. The server puts
+  // the full iframe URL into data-id (Embeds::gate_iframes()).
+  iframe: {
+    embedUrl: "{data-id}",
+
+    languages: {
+      de: {
+        loadBtn: "Inhalt laden",
+        // Empty: no "always load" button for unidentified providers.
+        loadAllBtn: "",
+        notice:
+          "Dieser Inhalt wird von einem Drittanbieter gehostet. Beim Laden des Inhalts werden Daten an den Anbieter übertragen.",
+      },
+    },
+  },
 };
+
+// A generic placeholder loads whatever URL it carries, so anything that is
+// not a web address (javascript:, data:) loses its placeholder role.
+function dropUnsafeGenericPlaceholders() {
+  for (const div of document.querySelectorAll<HTMLElement>(
+    'div[data-service="iframe"]',
+  )) {
+    let protocol = "";
+    try {
+      protocol = new URL(div.dataset.id ?? "").protocol;
+    } catch {
+      // Not a URL at all.
+    }
+    if (protocol !== "https:" && protocol !== "http:") {
+      div.removeAttribute("data-service");
+    }
+  }
+}
 
 window.CookieConsent = CookieConsent;
 const im = window.iframemanager();
@@ -91,6 +124,8 @@ async function init() {
       serviceCategories.has(id),
     ),
   );
+
+  dropUnsafeGenericPlaceholders();
 
   im.run({
     currLang: defaultLanguage,

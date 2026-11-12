@@ -26,8 +26,12 @@ final class Shortcode
     {
         $atts = shortcode_atts(['id' => '', 'service' => 'youtube', 'thumbnail' => ''], $atts, self::TAG);
 
-        $html = Embeds::placeholder(
-            sanitize_key($atts['service']),
+        $service = sanitize_key($atts['service']);
+
+        // The generic service loads any URL and is reserved for the iframes
+        // Embeds gates on its own; a plain <iframe> in the content does that.
+        $html = $service === Embeds::GENERIC_SERVICE ? '' : Embeds::placeholder(
+            $service,
             \trim((string) $atts['id']),
             self::resolve_thumbnail(\trim((string) $atts['thumbnail']))
         );
