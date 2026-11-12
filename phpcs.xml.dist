@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<ruleset name="Dock26 Cookies">
+    <description>Compatibility and WordPress security/API checks. Formatting stays PSR-12 style.</description>
+
+    <file>dock26-cookies.php</file>
+    <file>uninstall.php</file>
+    <file>includes</file>
+
+    <exclude-pattern>*/node_modules/*</exclude-pattern>
+    <exclude-pattern>*/vendor/*</exclude-pattern>
+    <exclude-pattern>*/dist/*</exclude-pattern>
+
+    <arg name="extensions" value="php"/>
+    <arg name="colors"/>
+    <arg value="sp"/>
+
+    <config name="testVersion" value="8.1-8.4"/>
+    <config name="minimum_wp_version" value="6.6"/>
+
+    <rule ref="PHPCompatibilityWP"/>
+
+    <!-- WordPress API and security sniffs only; whitespace and naming sniffs are left out on purpose. -->
+    <rule ref="WordPress.Security">
+        <!-- Exception messages are only ever returned as JSON by the REST API, never echoed. -->
+        <exclude name="WordPress.Security.EscapeOutput.ExceptionNotEscaped"/>
+    </rule>
+    <rule ref="WordPress.DB"/>
+    <rule ref="WordPress.WP">
+        <exclude name="WordPress.WP.I18n"/>
+    </rule>
+    <rule ref="WordPress.PHP">
+        <exclude name="WordPress.PHP.YodaConditions"/>
+        <exclude name="WordPress.PHP.POSIXFunctions"/>
+    </rule>
+</ruleset>

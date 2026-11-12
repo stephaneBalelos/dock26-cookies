@@ -1,45 +1,24 @@
 <script setup lang="ts">
-import { ref, computed, inject } from 'vue'
+import { ref, computed } from 'vue'
 import Navbar from '@/components/Navbar.vue';
 import Home from '@/pages/index.vue';
 import Settings from '@/pages/settings.vue';
-import type { CookieConfig } from '../../types';
 import { useConsentConfig } from './composables/useConsentConfig';
 
-const apiUrl = inject('apiUrl', '')
-const nonce = inject('nonce', '')
+const adminData = window.dock26CookiesAdmin
 
-if (!apiUrl || !nonce) {
-  console.error('API URL or nonce not provided')
-  throw new Error('API URL or nonce not provided')
+if (!adminData?.apiUrl || !adminData.nonce || !adminData.config) {
+  throw new Error('Dock26 Cookies: Die Admin-Daten (window.dock26CookiesAdmin) fehlen.')
 }
 
-const currentPath = ref<string>(window.location.hash || '/')
+const currentPath = ref<string>(window.location.hash)
 window.addEventListener('hashchange', () => {
   currentPath.value = window.location.hash
 })
 
-const currentView = computed(() => {
-  const path = currentPath.value.replace('#', '') || '/'
-  switch (path) {
-    case '/':
-      return Home
-    case '/settings':
-      return Settings
-    default:
-      return Home
-  }
-})
+const currentView = computed(() => currentPath.value === '#/settings' ? Settings : Home)
 
-const config = inject('initialConfig', null) as CookieConfig | null
-
-if (!config) {
-  console.error('Initial config not provided')
-  throw new Error('Initial config not provided')
-}
-
-const $consentConfig = useConsentConfig()
-$consentConfig.init(config)
+useConsentConfig().init(adminData)
 </script>
 
 <template>

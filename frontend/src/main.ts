@@ -9,7 +9,7 @@ import {
   type IframeManagerInstance,
   type IframeManagerRunOptions,
 } from "@orestbida/iframemanager";
-import type { CookieConfig, CustomStyles } from "../../types";
+import type { CookieConfig } from "../../types";
 
 /**
  * All config. options available here:
@@ -19,9 +19,9 @@ import type { CookieConfig, CustomStyles } from "../../types";
 declare global {
   interface Window {
     iframemanager: () => IframeManagerInstance;
+    // Printed by Main::enqueue_assets() right before this bundle.
     dock26Cookies: {
       config: CookieConfig;
-      customStyles?: CustomStyles;
     };
     CookieConsent: typeof CookieConsent;
   }
@@ -35,7 +35,9 @@ type ServiceDefinition = IframeManagerRunOptions["services"][string];
 const SERVICE_DEFINITIONS: Record<string, ServiceDefinition> = {
   youtube: {
     embedUrl: "https://www.youtube-nocookie.com/embed/{data-id}",
-    thumbnailUrl: "https://i3.ytimg.com/vi/{data-id}/hqdefault.jpg",
+    // Deliberately no thumbnailUrl: the preview image would be fetched from
+    // Google's servers before the visitor has consented. A first-party
+    // preview can be set per embed (shortcode attribute "thumbnail").
 
     iframe: {
       allow:
@@ -72,7 +74,7 @@ const SERVICE_DEFINITIONS: Record<string, ServiceDefinition> = {
 window.CookieConsent = CookieConsent;
 const im = window.iframemanager();
 
-document.addEventListener("DOMContentLoaded", async () => {
+async function init() {
   const config = window.dock26Cookies.config;
   const defaultLanguage = config.language.default;
 
@@ -142,19 +144,21 @@ document.addEventListener("DOMContentLoaded", async () => {
       translations: config.language.translations,
     },
 
+    // Fires on the first consent and on every later page load: bring all
+    // placeholders in line with what the visitor has accepted.
+    onConsent: ({ cookie }) => {
+      syncIframes(cookie, [...serviceCategories.keys()]);
+    },
+
     onChange: ({ cookie, changedServices }) => {
-      updateIframeAcceptance(cookie, changedServices);
+      syncIframes(cookie, Object.values(changedServices).flat());
     },
   });
 
-  function updateIframeAcceptance(
-    cookie: CookieConsent.CookieValue,
-    changedServicesCategories: { [key: string]: string[] },
-  ) {
-    const changedServices = Object.values(changedServicesCategories).flat();
-    const acceptedServices = Object.values(cookie.services).flat();
-    for (const service of changedServices) {
-      if (acceptedServices.includes(service)) {
+  function syncIframes(cookie: CookieConsent.CookieValue, services: string[]) {
+    const accepted = Object.values(cookie.services).flat();
+    for (const service of services) {
+      if (accepted.includes(service)) {
         im.acceptService(service);
       } else {
         im.rejectService(service);
@@ -162,45 +166,25 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  // Init Triggers Buttons
-  const initTriggers = () => {
-    const buttonConsent = document.getElementById("dock26-cookies-consent");
-    const buttonPreferences = document.getElementById(
-      "dock26-cookies-preferences",
-    );
-    if (buttonConsent) {
-      buttonConsent.addEventListener("click", () => {
-        CookieConsent.show(true);
-      });
-    }
-
-    if (buttonPreferences) {
-      buttonPreferences.addEventListener("click", () => {
-        CookieConsent.showPreferences();
-      });
-    }
-  };
-
-  // Scoped to #cc-main rather than :root/body: the stylesheet declares some
-  // variables (e.g. --cc-modal-margin) on #cc-main itself, which would win over
-  // an inherited value. Appending late also beats the vendor rule on document order.
-  const initCustomStyles = () => {
-    const customStyles = window.dock26Cookies?.customStyles;
-    if (!customStyles) {
+  // Any element with one of these ids reopens the banner or the preferences.
+  // Delegated, so it also works for elements added after page load.
+  document.addEventListener("click", (event) => {
+    if (!(event.target instanceof Element)) {
       return;
     }
 
-    const declarations = Object.entries(customStyles)
-      .map(([property, value]) => `${property}:${value}`)
-      .join(";");
+    if (event.target.closest("#dock26-cookies-consent")) {
+      CookieConsent.show(true);
+    } else if (event.target.closest("#dock26-cookies-preferences")) {
+      CookieConsent.showPreferences();
+    }
+  });
+}
 
-    const style = document.createElement("style");
-    style.id = "dock26-cookies-custom-styles";
-    style.textContent = `#cc-main{${declarations}}`;
-    document.head.appendChild(style);
-  };
-
-  initCustomStyles();
-
-  initTriggers();
-});
+// The bundle is normally printed in the footer, but an optimization plugin may
+// defer it past DOMContentLoaded — the banner must still come up then.
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", init);
+} else {
+  init();
+}

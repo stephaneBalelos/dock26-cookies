@@ -2,135 +2,80 @@
 
 namespace Dock26Cookies;
 
-if (!defined('ABSPATH')) {
+if (!\defined('ABSPATH')) {
     exit;
 }
 
-use WP_REST_Controller;
 use WP_Error;
-use WP_REST_Server;
 use WP_REST_Request;
 use WP_REST_Response;
+use WP_REST_Server;
 
-class APIController extends WP_REST_Controller
+/**
+ * REST API of the admin app.
+ *
+ *   POST /dock26-cookies/v1/settings/<section>  save one settings section
+ *
+ * A successful save answers with CookieConfig::toAdminData(), so the app
+ * refreshes its state without a second request. The initial state is printed
+ * into the admin page (Admin::enqueue_admin_assets()).
+ */
+final class APIController
 {
-    public function __construct()
+    public const REST_NAMESPACE = 'dock26-cookies/v1';
+
+    /** Settings section (URL segment) => method of CookieConfig that saves it. */
+    private const SECTIONS = [
+        'global' => 'saveGlobalSettings',
+        'consent-modal' => 'saveConsentModalConfig',
+        'preferences-modal' => 'savePreferenceModalConfig',
+        'gui' => 'saveGUISettings',
+        'custom-styles' => 'saveCustomStyles',
+    ];
+
+    public static function register_routes(): void
     {
-        $this->namespace = 'dock26-cookies/v1';
-    }
+        // Only the known sections are routable; anything else is a 404.
+        $sections = \implode('|', \array_keys(self::SECTIONS));
 
-    public function register_routes()
-    {
-        register_rest_route($this->namespace, '/config', [
-            [
-                'methods' => WP_REST_Server::READABLE,
-                'callback' => [$this, 'get_config'],
-                'permission_callback' => [$this, 'permissions_check']
-            ]
-        ]);
-
-        register_rest_route($this->namespace, '/update-settings', [
-            [
-                'methods' => WP_REST_Server::EDITABLE,
-                'callback' => [$this, 'update_settings'],
-                'permission_callback' => [$this, 'permissions_check']
-            ]
-        ]);
-
-        register_rest_route($this->namespace, '/update-consent-modal-config', [
-            [
-                'methods' => WP_REST_Server::EDITABLE,
-                'callback' => [$this, 'update_consent_modal_config'],
-                'permission_callback' => [$this, 'permissions_check']
-            ]
-        ]);
-
-        register_rest_route($this->namespace, '/update-preference-modal-config', [
-            [
-                'methods' => WP_REST_Server::EDITABLE,
-                'callback' => [$this, 'update_preference_modal_config'],
-                'permission_callback' => [$this, 'permissions_check']
-            ]
-        ]);
-
-        register_rest_route($this->namespace, '/update-gui-config', [
-            [
-                'methods' => WP_REST_Server::EDITABLE,
-                'callback' => [$this, 'update_gui_config'],
-                'permission_callback' => [$this, 'permissions_check']
-            ]
-        ]);
-
-        register_rest_route($this->namespace, '/update-custom-styles', [
-            [
-                'methods' => WP_REST_Server::EDITABLE,
-                'callback' => [$this, 'update_custom_styles'],
-                'permission_callback' => [$this, 'permissions_check']
-            ]
+        register_rest_route(self::REST_NAMESPACE, '/settings/(?P<section>' . $sections . ')', [
+            'methods' => WP_REST_Server::CREATABLE,
+            'callback' => [self::class, 'update_section'],
+            'permission_callback' => [self::class, 'permissions_check'],
+            'args' => [
+                'config' => [
+                    'description' => 'Die Werte des Einstellungsbereichs.',
+                    'type' => 'object',
+                    'required' => true,
+                ],
+            ],
         ]);
     }
 
-    public function permissions_check()
+    public static function permissions_check(): bool|WP_Error
     {
-        if (is_user_logged_in() && current_user_can('manage_options')) {
+        if (current_user_can('manage_options')) {
             return true;
         }
 
-        if (is_user_logged_in()) {
-            return new WP_Error('rest_forbidden', 'You do not have permissions to access this resource.', ['status' => 403]);
-        }
-
-        return new WP_Error('rest_forbidden', 'You cannot access this resource.', ['status' => 401]);
+        return new WP_Error(
+            'rest_forbidden',
+            'Sie haben keine Berechtigung, die Cookie-Einstellungen zu verwalten.',
+            ['status' => rest_authorization_required_code()]
+        );
     }
 
-    public function get_config(): WP_REST_Response
+    /** @param WP_REST_Request<array<string, mixed>> $request */
+    public static function update_section(WP_REST_Request $request): WP_REST_Response|WP_Error
     {
-        $config = new CookieConfig();
-        return new WP_REST_Response($config->getConfig(), 200);
-    }
-
-    public function update_settings(WP_REST_Request $request): WP_REST_Response
-    {
-        return $this->handle_config_update($request, [CookieConfig::class, 'saveGlobalSettings']);
-    }
-
-    public function update_consent_modal_config(WP_REST_Request $request): WP_REST_Response
-    {
-        return $this->handle_config_update($request, [CookieConfig::class, 'saveConsentModalConfig']);
-    }
-
-    public function update_preference_modal_config(WP_REST_Request $request): WP_REST_Response
-    {
-        return $this->handle_config_update($request, [CookieConfig::class, 'savePreferenceModalConfig']);
-    }
-
-    public function update_gui_config(WP_REST_Request $request): WP_REST_Response
-    {
-        return $this->handle_config_update($request, [CookieConfig::class, 'saveGUISettings']);
-    }
-
-    public function update_custom_styles(WP_REST_Request $request): WP_REST_Response
-    {
-        return $this->handle_config_update($request, [CookieConfig::class, 'saveCustomStyles']);
-    }
-
-    private function handle_config_update(WP_REST_Request $request, callable $save_fn): WP_REST_Response
-    {
-        $parameters = $request->get_json_params();
-
-        if (!isset($parameters['config']) || !\is_array($parameters['config'])) {
-            return new WP_REST_Response(null, 422);
-        }
+        $save = [CookieConfig::class, self::SECTIONS[$request['section']]];
 
         try {
-            $result = $save_fn($parameters['config']);
-            return new WP_REST_Response($result, 200);
+            $save((array) $request['config']);
         } catch (\InvalidArgumentException $e) {
-            return new WP_REST_Response($e->getMessage(), 422);
-        } catch (\Exception $e) {
-            // Don't leak internals to the client; the detail goes to the log.
-            error_log('[dock26-cookies] Config update failed: ' . $e->getMessage());
-            return new WP_REST_Response('Interner Fehler beim Speichern der Einstellungen.', 500);
+            return new WP_Error('dock26_cookies_invalid_settings', $e->getMessage(), ['status' => 422]);
         }
+
+        return new WP_REST_Response((new CookieConfig())->toAdminData());
     }
 }

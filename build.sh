@@ -24,6 +24,7 @@ pnpm --dir frontend build
 rm -f "${PLUGIN_NAME}.zip"
 zip -r "${PLUGIN_NAME}.zip" \
     "${PLUGIN_NAME}.php" \
+    uninstall.php \
     includes \
     admin/dist \
     frontend/dist

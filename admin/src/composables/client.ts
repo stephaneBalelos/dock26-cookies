@@ -1,73 +1,37 @@
-// Injected by wp_localize_script before this bundle runs (includes/admin.php).
-const adminData = window.dock26CookiesAdmin;
+import type { AdminData, SettingsSection } from "../../../types";
 
+/** REST client for includes/api.php. */
 export function useClient() {
-  const apiUrl = adminData?.apiUrl ?? "";
+  // Printed by Admin::enqueue_admin_assets() right before this bundle.
+  const { apiUrl = "", nonce = "" } = window.dock26CookiesAdmin ?? {};
 
-  const requestHeader = {
-    "Content-Type": "application/json",
-    "X-WP-Nonce": adminData?.nonce ?? "",
-  };
-
-  async function jsonQuery(
-    url: string,
-    method: string,
-    data?: Record<string, any>,
-  ) {
-    const res = await fetch(url, {
-      method: method,
-      headers: requestHeader,
-      body: data ? JSON.stringify(data) : null,
+  /**
+   * Saves one settings section and resolves with the resulting admin data.
+   * Rejects with an Error carrying the server's (German) message.
+   */
+  async function saveSection(
+    section: SettingsSection,
+    config: object,
+  ): Promise<AdminData> {
+    const res = await fetch(`${apiUrl}/settings/${section}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-WP-Nonce": nonce,
+      },
+      body: JSON.stringify({ config }),
     });
     const body = await res.json().catch(() => null);
 
     if (!res.ok) {
-      // Validation errors (422) arrive as a plain message string,
-      // WP_Error responses as { message } objects.
-      const message =
-        typeof body === "string" && body
-          ? body
-          : (body?.message ?? `Anfrage fehlgeschlagen (HTTP ${res.status})`);
-      throw new Error(message);
+      // Errors arrive as WP_Error objects: { code, message, data }.
+      throw new Error(
+        body?.message ?? `Anfrage fehlgeschlagen (HTTP ${res.status})`,
+      );
     }
 
     return body;
   }
 
-  async function getConfig() {
-    return jsonQuery(`${apiUrl}/config`, "GET");
-  }
-
-  async function updateGlobalSettings(config: Record<string, any>) {
-    return jsonQuery(`${apiUrl}/update-settings`, "PUT", { config });
-  }
-
-  async function updateConsentModalConfig(config: Record<string, any>) {
-    return jsonQuery(`${apiUrl}/update-consent-modal-config`, "PUT", {
-      config,
-    });
-  }
-
-  async function updatePreferencesModalConfig(config: Record<string, any>) {
-    return jsonQuery(`${apiUrl}/update-preference-modal-config`, "PUT", {
-      config,
-    });
-  }
-
-  async function updateGuiOptions(config: Record<string, any>) {
-    return jsonQuery(`${apiUrl}/update-gui-config`, "PUT", { config });
-  }
-
-  async function updateCustomStyles(config: Record<string, any>) {
-    return jsonQuery(`${apiUrl}/update-custom-styles`, "PUT", { config });
-  }
-
-  return {
-    getConfig,
-    updateGlobalSettings,
-    updateConsentModalConfig,
-    updatePreferencesModalConfig,
-    updateGuiOptions,
-    updateCustomStyles,
-  };
+  return { saveSection };
 }

@@ -20,7 +20,7 @@
                             <UFormField v-for="field in group.fields" :key="field.key" :label="field.label"
                                 :name="field.key">
                                 <UInputNumber v-if="field.type === 'size'" :model-value="sizeValue(field.key)"
-                                    @update:model-value="value => setSizeValue(field.key, value)" :min="0"
+                                    @update:model-value="(value: number | null | undefined) => setSizeValue(field.key, value)" :min="0"
                                     class="w-full" />
                                 <div v-else class="flex items-center gap-2">
                                     <UColorPicker v-model="form[field.key]" :format="field.format ?? 'hex'" />
@@ -182,7 +182,7 @@ function sizeValue(key: string): number {
     return parseFloat(form[key] ?? '0')
 }
 
-function setSizeValue(key: string, value: number | undefined) {
+function setSizeValue(key: string, value: number | null | undefined) {
     form[key] = `${value ?? 0}px`
 }
 

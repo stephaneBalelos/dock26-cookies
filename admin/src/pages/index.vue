@@ -18,43 +18,21 @@
 </template>
 
 <script setup lang="ts">
-import { useClient } from '@/composables/client';
 import { useConsentConfig } from '@/composables/useConsentConfig';
+import { useSaveSection } from '@/composables/useSaveSection';
 import type { ConsentModalConfig, PreferencesModalConfig } from '../../../types';
 import PreferencesModalForm from '@/components/Forms/PreferencesModalForm.vue';
 
 const $consentConfig = useConsentConfig()
 
-const $client = useClient()
+const { save } = useSaveSection()
 
-const toast = useToast()
-
-function notifyError(error: unknown) {
-    toast.add({
-        title: 'Speichern fehlgeschlagen',
-        description: error instanceof Error ? error.message : String(error),
-        icon: 'i-heroicons-exclamation-triangle',
-        color: 'error'
-    })
+function onUpdateConsentModalConfig(config: ConsentModalConfig) {
+    return save('consent-modal', config, 'Einwilligungs-Modal gespeichert')
 }
 
-async function onUpdateConsentModalConfig(config: ConsentModalConfig) {
-    try {
-        await $client.updateConsentModalConfig(config);
-        toast.add({ title: 'Einwilligungs-Modal gespeichert', color: 'success' })
-        await $consentConfig.reloadConfig()
-    } catch (error) {
-        notifyError(error)
-    }
-}
-async function onUpdatePreferencesModalConfig(config: PreferencesModalConfig) {
-    try {
-        await $client.updatePreferencesModalConfig(config);
-        toast.add({ title: 'Präferenzen-Modal gespeichert', color: 'success' })
-        await $consentConfig.reloadConfig()
-    } catch (error) {
-        notifyError(error)
-    }
+function onUpdatePreferencesModalConfig(config: PreferencesModalConfig) {
+    return save('preferences-modal', config, 'Präferenzen-Modal gespeichert')
 }
 </script>
 

@@ -65,7 +65,7 @@ import { useConsentConfig } from '@/composables/useConsentConfig';
 import type { ConsentModalLayout, ConsentModalPosition, GuiOptions, PreferencesModalLayout, PreferencesModalPosition } from 'vanilla-cookieconsent';
 
 type Props = {
-    options: NonNullable<CookieConfig['guiOptions']>
+    options: CookieConfig['guiOptions']
 }
 
 const props = defineProps<Props>()

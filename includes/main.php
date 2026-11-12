@@ -2,115 +2,89 @@
 
 namespace Dock26Cookies;
 
-if (!defined('ABSPATH')) {
-    exit; // Exit if accessed directly
+if (!\defined('ABSPATH')) {
+    exit;
 }
 
-require_once 'cookie-config.php';
-
-class Main
+final class Main
 {
     private const VERSION_OPTION = 'dock26_cookies_plugin_version';
 
-    public static function init()
+    private const SCRIPT_HANDLE = 'dock26_cookieconsent_js';
+
+    private const STYLE_HANDLE = 'dock26_cookieconsent_css';
+
+    public static function init(): void
     {
-        self::init_admin();
+        Admin::init();
+        Embeds::init();
+        Shortcode::register();
 
-        \Dock26Cookies\Shortcode::init();
-
-        add_action('admin_init', [__CLASS__, 'maybe_upgrade']);
-
-        add_action('wp_enqueue_scripts', [__CLASS__, 'enqueue_assets']);
-
-        add_action('rest_api_init', [__CLASS__, 'init_rest_api']);
-
-        add_filter('render_block_core/embed', [__CLASS__, 'render_block_or_prompt_consent'], 10, 2);
+        add_action('admin_init', [self::class, 'maybe_upgrade']);
+        add_action('wp_enqueue_scripts', [self::class, 'enqueue_assets']);
+        add_action('rest_api_init', [APIController::class, 'register_routes']);
     }
 
-    public static function maybe_upgrade()
+    public static function activate(): void
     {
-        $current_version = get_option(self::VERSION_OPTION);
-        if ($current_version !== DOCK26_COOKIES_PLUGIN_VERSION) {
-            // Per-version upgrade routines go here.
-            update_option(self::VERSION_OPTION, DOCK26_COOKIES_PLUGIN_VERSION);
+        self::maybe_upgrade();
+    }
+
+    public static function maybe_upgrade(): void
+    {
+        $installed_version = get_option(self::VERSION_OPTION);
+        if ($installed_version === DOCK26_COOKIES_PLUGIN_VERSION) {
+            return;
         }
+
+        // Options were stored as JSON strings before 0.4.0. A fresh install
+        // has no version yet and nothing to convert.
+        if (\is_string($installed_version) && \version_compare($installed_version, '0.4.0', '<')) {
+            CookieConfig::migrateLegacyOptions();
+        }
+
+        update_option(self::VERSION_OPTION, DOCK26_COOKIES_PLUGIN_VERSION);
     }
 
-    public static function enqueue_assets()
+    public static function enqueue_assets(): void
     {
+        $config = new CookieConfig();
+
         wp_enqueue_script(
-            'dock26_cookieconsent_js',
+            self::SCRIPT_HANDLE,
             plugins_url('frontend/dist/assets/js/frontend.iife.js', DOCK26_COOKIES_PLUGIN_FILE),
             [],
             DOCK26_COOKIES_PLUGIN_VERSION,
             true
         );
+        wp_add_inline_script(
+            self::SCRIPT_HANDLE,
+            self::js_global('dock26Cookies', ['config' => $config->getConfig()]),
+            'before'
+        );
+
         wp_enqueue_style(
-            'dock26_cookieconsent_css',
+            self::STYLE_HANDLE,
             plugins_url('frontend/dist/assets/css/frontend.css', DOCK26_COOKIES_PLUGIN_FILE),
             [],
             DOCK26_COOKIES_PLUGIN_VERSION
         );
-
-        $Cookies = new CookieConfig();
-
-        wp_localize_script('dock26_cookieconsent_js', 'dock26Cookies', [
-            'config' => $Cookies->getConfig(),
-            'customStyles' => $Cookies->getCustomStyles(),
-        ]);
+        // Printed right after the stylesheet, so it wins over the vendor
+        // defaults on document order.
+        wp_add_inline_style(self::STYLE_HANDLE, $config->getCustomStylesCss());
     }
 
-    public static function init_rest_api()
+    /**
+     * A `window.<name> = <json>;` statement for wp_add_inline_script().
+     *
+     * @param array<string, mixed> $data
+     */
+    public static function js_global(string $name, array $data): string
     {
-        $api_controller = new APIController();
-        $api_controller->register_routes();
-    }
-
-    public static function init_admin()
-    {
-        Admin::init();
-    }
-
-    public static function render_block_or_prompt_consent($block_content, $block)
-    {
-        $block_attrs = $block['attrs'] ?? [];
-
-        if (($block_attrs['providerNameSlug'] ?? '') !== 'youtube' || empty($block_attrs['url'])) {
-            return $block_content;
-        }
-
-        $video_id = self::extract_youtube_id($block_attrs['url']);
-        if ($video_id === null) {
-            return $block_content;
-        }
-
-        $class = $block_attrs['className'] ?? 'wp-block-embed-youtube';
-
-        return '<div
-            class="' . esc_attr($class) . '"
-            data-service="youtube"
-            data-id="' . esc_attr($video_id) . '"
-            data-iframe-class="' . esc_attr($class) . '"
-            data-autoscale data-iframe-loading="lazy" data-iframe-frameborder="0"></div>';
-    }
-
-    private static function extract_youtube_id(string $url): ?string
-    {
-        if (preg_match('~(?:youtube\.com/(?:watch\?(?:.*&)?v=|embed/|shorts/|live/)|youtu\.be/)([A-Za-z0-9_-]{6,20})~', $url, $matches)) {
-            return $matches[1];
-        }
-
-        return null;
-    }
-
-    public static function activate()
-    {
-        update_option(self::VERSION_OPTION, DOCK26_COOKIES_PLUGIN_VERSION);
-    }
-
-    public static function uninstall()
-    {
-        delete_option(self::VERSION_OPTION);
-        CookieConfig::deleteAllOptions();
+        return \sprintf(
+            'window.%s = %s;',
+            $name,
+            wp_json_encode($data, JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE)
+        );
     }
 }

@@ -1,3 +1,8 @@
+// Shared between the admin app and the frontend bundle. This folder has no
+// node_modules of its own, so the vanilla-cookieconsent types are referenced
+// through the package's global `CookieConsent` namespace instead of an import.
+
+/** The configuration built by CookieConfig::getConfig() (includes/cookie-config.php). */
 export type CookieConfig = {
   settings: {
     cookie_name: string;
@@ -5,14 +10,14 @@ export type CookieConfig = {
     privacy_btn: { label: string; url: string };
     imprint_btn: { label: string; url: string };
   };
-  guiOptions?: {
+  guiOptions: {
     consentModal: {
-      layout: "box" | "bar" | "cloud";
-      position: 'top left' | 'top center' | 'top right' | 'middle left' | 'middle center' | 'middle right' | 'bottom left' | 'bottom center' | 'bottom right';
+      layout: CookieConsent.ConsentModalLayout;
+      position: CookieConsent.ConsentModalPosition;
     };
     preferencesModal: {
-      layout: "box" | "bar";
-      position: 'left' | 'right';
+      layout: CookieConsent.PreferencesModalLayout;
+      position: CookieConsent.PreferencesModalPosition;
     };
   };
   categories: {
@@ -37,10 +42,23 @@ export type CookieConfig = {
 
 /**
  * CSS custom properties of the consent modal, keyed by variable name (e.g. "--cc-bg").
- * Kept separate from CookieConfig: that object is spread into cookieConsent.run(),
- * which must not receive these.
+ * On the frontend they are printed server-side as an inline stylesheet.
  */
 export type CustomStyles = Record<string, string>;
+
+/** CookieConfig::toAdminData(): the admin app's state, also returned by every save. */
+export type AdminData = {
+  config: CookieConfig;
+  customStyles: CustomStyles;
+};
+
+/** URL segment of POST /settings/<section> (APIController::SECTIONS). */
+export type SettingsSection =
+  | "global"
+  | "consent-modal"
+  | "preferences-modal"
+  | "gui"
+  | "custom-styles";
 
 /**
  * The admin-editable subset of CookieConfig["settings"]. The button labels and

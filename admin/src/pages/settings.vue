@@ -9,68 +9,37 @@
                     :settings="$consentConfig.config.value.settings" @saved="onUpdateGlobalSettings" />
 
                 <GuiOptionsForm v-if="$consentConfig.config.value?.guiOptions"
-                    :options="$consentConfig.config.value?.guiOptions" @saved="onUpdateGuiOptions" />
+                    :options="$consentConfig.config.value.guiOptions" @saved="onUpdateGuiOptions" />
 
-                <CustomStylesForm v-if="initialCustomStyles" :styles="initialCustomStyles"
-                    @saved="onUpdateCustomStyles" />
+                <CustomStylesForm v-if="$consentConfig.customStyles.value"
+                    :styles="$consentConfig.customStyles.value" @saved="onUpdateCustomStyles" />
             </div>
         </UPageBody>
     </UPage>
 </template>
 
 <script setup lang="ts">
-import { inject } from 'vue';
 import ConsentGlobalSettingsForm from '@/components/Forms/ConsentGlobalSettingsForm.vue';
 import GuiOptionsForm from '@/components/Forms/GuiOptionsForm.vue';
-import { useClient } from '@/composables/client';
 import { useConsentConfig } from '@/composables/useConsentConfig';
+import { useSaveSection } from '@/composables/useSaveSection';
 import type { CustomStyles, GlobalSettingsConfig } from '../../../types';
 import type { GuiOptions } from 'vanilla-cookieconsent';
 
 const $consentConfig = useConsentConfig()
 
-const $client = useClient()
+const { save } = useSaveSection()
 
-const toast = useToast()
-
-const initialCustomStyles = inject('initialCustomStyles', null) as CustomStyles | null
-
-function notifyError(error: unknown) {
-    toast.add({
-        title: 'Speichern fehlgeschlagen',
-        description: error instanceof Error ? error.message : String(error),
-        icon: 'i-heroicons-exclamation-triangle',
-        color: 'error'
-    })
+function onUpdateGlobalSettings(data: GlobalSettingsConfig) {
+    return save('global', data, 'Allgemeine Einstellungen gespeichert')
 }
 
-async function onUpdateGlobalSettings(data: GlobalSettingsConfig) {
-    try {
-        await $client.updateGlobalSettings(data);
-        toast.add({ title: 'Allgemeine Einstellungen gespeichert', color: 'success' })
-        await $consentConfig.reloadConfig()
-    } catch (error) {
-        notifyError(error)
-    }
+function onUpdateGuiOptions(data: GuiOptions) {
+    return save('gui', data, 'GUI-Optionen gespeichert')
 }
 
-async function onUpdateGuiOptions(data: GuiOptions) {
-    try {
-        await $client.updateGuiOptions(data);
-        toast.add({ title: 'GUI-Optionen gespeichert', color: 'success' })
-        await $consentConfig.reloadConfig()
-    } catch (error) {
-        notifyError(error)
-    }
-}
-
-async function onUpdateCustomStyles(data: CustomStyles) {
-    try {
-        await $client.updateCustomStyles(data);
-        toast.add({ title: 'Benutzerdefinierte Stile gespeichert', color: 'success' })
-    } catch (error) {
-        notifyError(error)
-    }
+function onUpdateCustomStyles(data: CustomStyles) {
+    return save('custom-styles', data, 'Benutzerdefinierte Stile gespeichert')
 }
 </script>
 
