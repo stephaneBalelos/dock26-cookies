@@ -92,6 +92,28 @@ final class CookieConfig
         '--cc-modal-margin' => '16px',
     ];
 
+    /**
+     * CSS custom properties of the embed placeholders (iframemanager), each
+     * taking the value of the cookie consent property it is mapped to. The
+     * placeholders have no settings of their own.
+     */
+    private const IFRAME_STYLES = [
+        '--im-bg' => '--cc-bg',
+        '--im-color' => '--cc-primary-color',
+        // The modals color their links the same way.
+        '--im-link-color' => '--cc-btn-primary-bg',
+        '--im-link-hover-color' => '--cc-primary-color',
+
+        '--im-btn-bg' => '--cc-btn-primary-bg',
+        '--im-btn-color' => '--cc-btn-primary-color',
+        '--im-btn-hover-bg' => '--cc-btn-primary-hover-bg',
+
+        '--im-btn-s-bg' => '--cc-btn-secondary-bg',
+        '--im-btn-s-color' => '--cc-btn-secondary-color',
+        '--im-btn-s-hover-bg' => '--cc-btn-secondary-hover-bg',
+        '--im-btn-s-active-bg' => '--cc-btn-secondary-hover-bg',
+    ];
+
     /** Custom style properties holding a pixel length instead of a color. */
     private const SIZE_KEYS = [
         '--cc-modal-border-radius',
@@ -301,9 +323,12 @@ final class CookieConfig
     }
 
     /**
-     * The custom styles as a CSS rule. Scoped to #cc-main rather than :root:
-     * the vendor stylesheet declares some variables (e.g. --cc-modal-margin)
-     * on #cc-main itself, which would win over an inherited value.
+     * The custom styles as CSS: one rule for the cookie modals and the rules
+     * that give the embed placeholders the same look.
+     *
+     * The modal rule is scoped to #cc-main rather than :root: the vendor
+     * stylesheet declares some variables (e.g. --cc-modal-margin) on #cc-main
+     * itself, which would win over an inherited value.
      */
     public function getCustomStylesCss(): string
     {
@@ -312,7 +337,33 @@ final class CookieConfig
             $declarations[] = $property . ':' . $value;
         }
 
-        return '#cc-main{' . \implode(';', $declarations) . '}';
+        return '#cc-main{' . \implode(';', $declarations) . '}' . $this->getIframeStylesCss();
+    }
+
+    /**
+     * The placeholder variables carry the concrete values: the --cc-*
+     * properties only exist inside #cc-main, so a placeholder elsewhere on
+     * the page could not resolve a var() reference to them.
+     */
+    private function getIframeStylesCss(): string
+    {
+        $styles = $this->customStyles;
+
+        $declarations = [];
+        foreach (self::IFRAME_STYLES as $property => $source) {
+            $declarations[] = $property . ':' . $styles[$source];
+        }
+
+        // No counterpart among the --cc-* properties. The overlay lies on top
+        // of the optional thumbnail, so it stays translucent.
+        $declarations[] = '--im-overlay-bg:color-mix(in srgb,' . $styles['--cc-bg'] . ' 80%,transparent)';
+        $declarations[] = '--im-btn-active-box-shadow:0 0 0 .25em color-mix(in srgb,' . $styles['--cc-btn-primary-bg'] . ' 24%,transparent)';
+
+        // The vendor stylesheet has no variable for the button radius.
+        $buttons = 'div[data-service] .cll .c-l-b,div[data-service] .cll .c-la-b';
+
+        return 'div[data-service]{' . \implode(';', $declarations) . '}'
+            . $buttons . '{border-radius:' . $styles['--cc-btn-border-radius'] . '}';
     }
 
     /**
