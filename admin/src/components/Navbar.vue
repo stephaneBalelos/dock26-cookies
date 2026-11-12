@@ -14,6 +14,7 @@
         <template #right>
             <div>
                 <a href="#/">Einwilligung</a> |
+                <a href="#/styling">Styling</a> |
                 <a href="#/settings">Einstellungen</a>
             </div>
         </template>

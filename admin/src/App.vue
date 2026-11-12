@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import Navbar from '@/components/Navbar.vue';
 import Home from '@/pages/index.vue';
 import Settings from '@/pages/settings.vue';
+import Styling from '@/pages/styling.vue';
 import { useConsentConfig } from './composables/useConsentConfig';
 
 const adminData = window.dock26CookiesAdmin
@@ -16,7 +17,12 @@ window.addEventListener('hashchange', () => {
   currentPath.value = window.location.hash
 })
 
-const currentView = computed(() => currentPath.value === '#/settings' ? Settings : Home)
+const pages = {
+  '#/styling': Styling,
+  '#/settings': Settings,
+} as const
+
+const currentView = computed(() => pages[currentPath.value as keyof typeof pages] ?? Home)
 
 useConsentConfig().init(adminData)
 </script>

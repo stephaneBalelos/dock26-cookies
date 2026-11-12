@@ -2,15 +2,31 @@ import { createGlobalState } from "@vueuse/core";
 import { ref, nextTick } from "vue";
 import * as cookieConsent from "vanilla-cookieconsent";
 import type { AdminData, CookieConfig, CustomStyles } from "../../../types";
+import { customStylesCss } from "../styleFields";
 
 // The preview stores its consent under its own name, so trying out the modals
 // here doesn't overwrite the consent the admin gave as a visitor of the site.
-const PREVIEW_COOKIE_NAME = "dock26_cookies_preview";
+export const PREVIEW_COOKIE_NAME = "dock26_cookies_preview";
+
+const CUSTOM_STYLES_ELEMENT_ID = "dock26-cookies-custom-styles";
+
+/** Gives the quick previews in the admin page the saved custom styles. */
+function applyCustomStyles(styles: CustomStyles) {
+  let element = document.getElementById(CUSTOM_STYLES_ELEMENT_ID);
+  if (!element) {
+    element = document.createElement("style");
+    element.id = CUSTOM_STYLES_ELEMENT_ID;
+    document.head.append(element);
+  }
+  element.textContent = customStylesCss(styles);
+}
 
 /** Only the keys cookieconsent understands; `settings` is plugin-specific. */
 function previewOptions(config: CookieConfig): cookieConsent.CookieConsentConfig {
   return {
     cookie: { name: PREVIEW_COOKIE_NAME },
+    // Modals open only through the preview buttons, never on page load.
+    autoShow: false,
     categories: config.categories,
     guiOptions: config.guiOptions,
     language: config.language,
@@ -39,6 +55,7 @@ export const useConsentConfig = createGlobalState(() => {
     cookieConsent.hidePreferences();
     config.value = data.config;
     customStyles.value = data.customStyles;
+    applyCustomStyles(data.customStyles);
   }
 
   function showConsentModal() {
