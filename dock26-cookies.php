@@ -2,7 +2,7 @@
 /*
 Plugin Name: Dock26 Cookies
 Description: Dock26 Cookies Plugin
-Version: 0.5.0
+Version: 0.5.2
 Author: Dock26
 Text Domain: dock26-cookies
 License: GPL-2.0-or-later
@@ -18,7 +18,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Keep in sync with the Version plugin header above.
-define('DOCK26_COOKIES_PLUGIN_VERSION', '0.5.0');
+define('DOCK26_COOKIES_PLUGIN_VERSION', '0.5.2');
 define('DOCK26_COOKIES_PLUGIN_FILE', __FILE__);
 
 require_once __DIR__ . '/includes/cookie-config.php';

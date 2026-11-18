@@ -5,6 +5,8 @@ import "vanilla-cookieconsent/dist/cookieconsent.css";
 // window.iframemanager() below throws.
 import "@orestbida/iframemanager";
 import "@orestbida/iframemanager/dist/iframemanager.css";
+// After the vendor stylesheet: overrides its placeholder sizing.
+import "./style.css";
 import {
   type IframeManagerInstance,
   type IframeManagerRunOptions,

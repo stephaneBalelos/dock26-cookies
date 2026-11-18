@@ -370,9 +370,7 @@ final class CookieConfig
         $buttons = 'div[data-service] .cll .c-l-b,div[data-service] .cll .c-la-b';
 
         return 'div[data-service]{' . \implode(';', $declarations) . '}'
-            . $buttons . '{border-radius:' . $styles['--cc-btn-border-radius'] . '}'
-            // Placeholders of iframes with their own dimensions (Embeds::size_css()).
-            . 'div[data-service][style*="--d26-ratio"]::before{padding-top:var(--d26-ratio)}';
+            . $buttons . '{border-radius:' . $styles['--cc-btn-border-radius'] . '}';
     }
 
     /**
